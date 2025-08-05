@@ -79,7 +79,8 @@ export const saveFormDataIncremental = async (
 
     // Use the simple upsert function
     const { data, error } = await supabase.rpc('upsert_form_session', {
-      form_data: dbFormData
+      p_form_data: dbFormData,
+      p_session_id: sessionId
     });
 
     if (error) {

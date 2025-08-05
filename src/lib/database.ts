@@ -158,7 +158,8 @@ export const testUpsertFunction = async (): Promise<boolean> => {
     };
 
     const { data, error } = await supabase.rpc('upsert_form_session', {
-      form_data: testData
+      p_form_data: testData,
+      p_session_id: testData.session_id
     });
 
     if (error) {
