@@ -36,13 +36,13 @@ export function Header({ showCTA = true }: HeaderProps) {
         const hasPassedHero = heroRect.bottom < 0;
         
         // Only show sticky CTA after scrolling past hero and on mobile/tablet
-        const isMobileTablet = window.innerWidth < 1025; // Using md breakpoint
+        const isMobile = window.innerWidth < 577; // Using sm breakpoint (mobile only)
         
         if (hasPassedHero && !hasScrolledPastHero) {
           setHasScrolledPastHero(true);
         }
         
-        setShowStickyCTA(hasPassedHero && isMobileTablet && showCTA);
+        setShowStickyCTA(hasPassedHero && isMobile && showCTA);
       }
     };
 
@@ -88,7 +88,7 @@ export function Header({ showCTA = true }: HeaderProps) {
           {showCTA && (
             <button
              onClick={handleCTAClick}
-                className="hidden md:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
+                className="hidden sm:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
              className="hidden md:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
             >
               Get Started
@@ -100,7 +100,7 @@ export function Header({ showCTA = true }: HeaderProps) {
 
       {/* Sticky CTA Button for Mobile/Tablet */}
       {showStickyCTA && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 p-3 md:hidden animate-slide-down">
+        <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 p-3 sm:hidden animate-slide-down">
           <div className="max-w-7xl mx-auto px-4">
             <button
               onClick={handleCTAClick}
