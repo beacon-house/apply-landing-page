@@ -1,0 +1,280 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 48 100% 60.8%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    @apply antialiased;
+    @apply overflow-x-hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  @font-face {
+    font-family: 'Poppins';
+    font-weight: 600;
+    font-display: swap;
+    font-feature-settings: 'kern' 1;
+  }
+  
+  @font-face {
+    font-family: 'Open Sans';
+    font-weight: 400;
+    font-display: swap;
+    font-feature-settings: 'kern' 1;
+  }
+  
+  body {
+    @apply text-gray-900 font-body;
+    @apply overflow-x-hidden;
+    font-size: 16px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans;
+  }
+
+  h1 {
+    text-rendering: optimizeLegibility;
+    font-display: swap;
+    contain: layout style paint;
+  }
+  
+  /* Dialog backdrop blur */
+  [data-overlay-container="true"] {
+    @apply backdrop-blur-sm;
+  }
+  
+  /* Ensure inputs have proper font size to prevent auto-zoom on mobile */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  
+  /* Form helper text styling */
+  .text-sm.text-gray-600 {
+    @apply italic text-gray-800;
+  }
+  
+  /* Form error messages */
+  .text-sm.text-red-500 {
+    @apply italic;
+  }
+
+  /* Sticky submit button spacing */
+  .pb-24 {
+    padding-bottom: 6rem;
+  }
+
+  /* Prevent body scroll when sticky elements are present */
+  body:has(.fixed.bottom-0) {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Slide up animation for sticky buttons */
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+}
+
+@layer components {
+  .stat-card {
+    @apply bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-primary mb-6 text-center font-sans;
+  }
+  
+  .section-subtitle {
+    @apply text-lg md:text-xl text-gray-600 mb-12 max-w-3xl mx-auto text-center leading-relaxed;
+  }
+
+  .cta-button {
+    @apply bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+  
+  /* Evaluation Animation Overlay */
+  .evaluation-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center;
+    background-color: #fff;
+  }
+  
+  .evaluation-content {
+    @apply bg-white rounded-xl shadow-lg p-8 max-w-md w-full;
+  }
+  
+  .evaluation-step {
+    @apply text-primary font-medium;
+  }
+  
+  .evaluation-heading {
+    @apply text-xl font-bold text-primary mb-2;
+  }
+  
+  .evaluation-subtext {
+    @apply text-gray-800 font-medium;
+  }
+}
+
+/* Mobile sticky CTA animations */
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-sticky-cta {
+  animation: slideInDown 0.3s ease-out forwards;
+}
+
+/* Animation for fading elements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+/* Loading animation dots */
+@keyframes pulseDot1 {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseDot2 {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseDot3 {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.animate-pulse-dot1 {
+  animation: pulseDot1 1.5s infinite ease-in-out;
+}
+
+.animate-pulse-dot2 {
+  animation: pulseDot2 1.5s infinite ease-in-out 0.2s;
+}
+
+.animate-pulse-dot3 {
+  animation: pulseDot3 1.5s infinite ease-in-out 0.4s;
+}
+
+/* Pulse animation for text */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-text {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Progress animation */
+@keyframes progressGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Form transitions */
+@keyframes formShrink {
+  from { max-height: 100vh; opacity: 1; }
+  to { max-height: 40vh; opacity: 0.3; }
+}
+
+/* Calendar iframe for mobile */
+@media (max-width: 768px) {
+  /* Adjust padding on FormPage for calendar view */
+  .min-h-\[calc\(100vh-10rem\)\] {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  /* Make calendar container full width on mobile */
+  section[class*="py-8"] > div[class*="max-w-6xl mx-auto"] {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  /* Ensure loading animation is visible on mobile */
+  .fixed.inset-0.flex.items-center.justify-center.z-50 {
+    padding: 1rem;
+  }
+}
