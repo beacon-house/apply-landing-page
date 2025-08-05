@@ -47,6 +47,8 @@ export const supabase = getSupabaseClient();
  */
 export const testDatabaseConnection = async (): Promise<boolean> => {
   try {
+    debugLog('🔍 Testing database connection...');
+    
     // Simple query to test connection
     const { data, error } = await supabase
       .from('form_sessions')
@@ -55,6 +57,12 @@ export const testDatabaseConnection = async (): Promise<boolean> => {
     
     if (error) {
       errorLog('Database connection test failed:', error);
+      errorLog('Connection error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return false;
     }
     
@@ -62,6 +70,9 @@ export const testDatabaseConnection = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     errorLog('Database connection failed:', error);
+    if (error instanceof Error) {
+      errorLog('Connection exception details:', error.message);
+    }
     return false;
   }
 };

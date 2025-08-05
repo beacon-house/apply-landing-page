@@ -30,6 +30,8 @@ export const saveFormDataIncremental = async (
   formData: any
 ): Promise<void> => {
   try {
+    debugLog('🔄 Starting incremental form save:', { sessionId, pageNumber, funnelStage });
+    
     // Determine if counseling is booked
     const isCounsellingBooked = Boolean(formData.selectedDate && formData.selectedSlot);
     
@@ -77,6 +79,8 @@ export const saveFormDataIncremental = async (
       created_at: new Date().toISOString()
     };
 
+    debugLog('📤 Attempting to save form data with upsert function');
+    
     // Use the simple upsert function
     const { data, error } = await supabase.rpc('upsert_form_session', {
       p_form_data: dbFormData,
@@ -84,6 +88,7 @@ export const saveFormDataIncremental = async (
     });
 
     if (error) {
+      errorLog('❌ Upsert function failed:', error);
       throw error;
     }
 
@@ -96,9 +101,14 @@ export const saveFormDataIncremental = async (
     try {
       debugLog('🔄 Attempting fallback direct upsert for session:', sessionId);
       
+      // Prepare data for direct upsert (removing any null/undefined values)
+      const cleanDbFormData = Object.fromEntries(
+        Object.entries(dbFormData).filter(([_, value]) => value !== null && value !== undefined)
+      );
+      
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('form_sessions')
-        .upsert([dbFormData], { 
+        .upsert([cleanDbFormData], { 
           onConflict: 'session_id',
           ignoreDuplicates: false 
         })
@@ -106,6 +116,12 @@ export const saveFormDataIncremental = async (
 
       if (fallbackError) {
         errorLog('❌ Fallback upsert also failed:', fallbackError);
+        errorLog('❌ Fallback error details:', {
+          message: fallbackError.message,
+          details: fallbackError.details,
+          hint: fallbackError.hint,
+          code: fallbackError.code
+        });
         throw fallbackError;
       }
 
@@ -113,6 +129,9 @@ export const saveFormDataIncremental = async (
       
     } catch (fallbackError) {
       errorLog('❌ Both RPC and direct upsert failed:', fallbackError);
+      
+      // Log the data that failed to save for debugging
+      errorLog('❌ Failed data payload:', dbFormData);
       // Don't throw - form should continue working even if tracking fails
     }
     // Don't throw - form should continue working even if tracking fails
