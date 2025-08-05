@@ -19,14 +19,15 @@ interface HeaderProps {
 
 export function Header({ showCTA = true }: HeaderProps) {
   const navigate = useNavigate();
-  const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [showMobileStickyCTA, setShowMobileStickyCTA] = useState(false);
+  const [showHeaderCTA, setShowHeaderCTA] = useState(false);
   const [hasScrolledPastHero, setHasScrolledPastHero] = useState(false);
 
   const handleCTAClick = () => {
     navigate('/application-form');
   };
 
-  // Scroll detection for sticky CTA button
+  // Scroll detection for CTA visibility logic
   useEffect(() => {
     const handleScroll = () => {
       // Get hero CTA button position
@@ -35,14 +36,18 @@ export function Header({ showCTA = true }: HeaderProps) {
         const heroRect = heroCTA.getBoundingClientRect();
         const hasPassedHero = heroRect.bottom < 0;
         
-        // Only show sticky CTA after scrolling past hero and on mobile/tablet
-        const isMobile = window.innerWidth < 577; // Using sm breakpoint (mobile only)
+        const isMobile = window.innerWidth < 577; // Mobile breakpoint
+        const isTabletOrDesktop = window.innerWidth >= 577; // Tablet and desktop
         
         if (hasPassedHero && !hasScrolledPastHero) {
           setHasScrolledPastHero(true);
         }
         
-        setShowStickyCTA(hasPassedHero && isMobile && showCTA);
+        // Mobile: Show sticky CTA after scroll
+        setShowMobileStickyCTA(hasPassedHero && isMobile && showCTA);
+        
+        // Tablet & Desktop: Show header CTA after scroll
+        setShowHeaderCTA(hasPassedHero && isTabletOrDesktop && showCTA);
       }
     };
 
@@ -89,17 +94,17 @@ export function Header({ showCTA = true }: HeaderProps) {
             <button
              onClick={handleCTAClick}
                 className="hidden sm:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
-             className="hidden md:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
+              className={`${showHeaderCTA ? 'block' : 'hidden'} sm:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base`}
             >
-              Get Started
+              Request an Evaluation
             </button>
           )}
         </div>
       </div>
       </header>
 
-      {/* Sticky CTA Button for Mobile/Tablet */}
-      {showStickyCTA && (
+      {/* Sticky CTA Button for Mobile Only */}
+      {showMobileStickyCTA && (
         <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 p-3 sm:hidden animate-slide-down">
           <div className="max-w-7xl mx-auto px-4">
             <button
