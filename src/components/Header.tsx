@@ -89,6 +89,51 @@ export function Header({ showCTA = true }: HeaderProps) {
                 className="h-8 w-auto sm:h-10 md:h-12"
             />
           </div>
+          
+          {/* Navigation Menu - Hidden on mobile, visible on tablet/desktop */}
+          <nav className="hidden sm:flex items-center space-x-8">
+            <a 
+              href="#why-us" 
+              className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('why-us')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Why Us
+            </a>
+            <a 
+              href="#success-rates" 
+              className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('success-rates')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Our Results
+            </a>
+            <a 
+              href="#process" 
+              className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('process')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Our Blueprint
+            </a>
+            <a 
+              href="#services" 
+              className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              What We Do
+            </a>
+          </nav>
+
             {/* CTA Button - Hidden on mobile/tablet, shown on desktop */}
           {showCTA && (
             <button
