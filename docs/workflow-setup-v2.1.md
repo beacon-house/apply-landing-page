@@ -15,7 +15,7 @@ New admissions landing page for Beacon House with simplified form structure, dat
 
 ### **GitHub Repository**
 
-* **Repository:** https://github.com/beacon-house/new-admissions-landing-page  
+* **Repository:** https://github.com/beacon-house/apply-landing-page
 * **Main Branch:** main \- Production-ready code  
 * **Staging Branch:** staging \- Development/testing branch
 
