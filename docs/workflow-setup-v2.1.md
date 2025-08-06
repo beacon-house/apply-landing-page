@@ -122,7 +122,7 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Production Data Flow**
 
-**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** → **Google Sheet** (prod-v4 tab) \+ **Email** (Vishy & Karthik) \+ **Calendar Invite**
+**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.prod-apply-bch page v2") → **Google Sheet** (prod-v4 tab) \+ **Email** (Vishy & Karthik) \+ **Calendar Invite**
 
 ## **Data Storage Structure**
 
