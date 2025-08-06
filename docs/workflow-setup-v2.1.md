@@ -118,7 +118,7 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Staging Data Flow**
 
-**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("02.staging-admissions-bch page v3 \- WIP") → **Google Sheet** (staging-v4 tab) \+ **Email** (nkgoutham@gmail.com) \+ **Calendar Invite**
+**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.stg-apply-bch page v2") → **Google Sheet** (apply-beaconhouse.in leads > staging-v2 tab) \+ **Email** (nkgoutham@gmail.com) \+ **Calendar Invite**
 
 ### **Production Data Flow**
 
