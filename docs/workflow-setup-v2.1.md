@@ -32,7 +32,7 @@ New admissions landing page for Beacon House with simplified form structure, dat
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Domain:** staging-v3-admissions-bch.netlify.app  
+* **Domain:** https://staging-v2-apply-bch-in.netlify.app/
 * **Purpose:** Testing and validation
 
 ### **Environment Variables (Staging)**
