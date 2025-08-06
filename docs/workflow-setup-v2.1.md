@@ -67,23 +67,29 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[production-webhook-url\]
 
 ## **Database \- Supabase**
 
-### **Current Setup**
+### **Current Setup - Staging**
 
-* **Organization:** beacon-house-projects  
-* **Project:** new-admissions-landing-page  
+* **Organization:** new-admissions-landing-page
+* **Project:** apply-new-adms-lp-v2-staging
 * **Table:** form\_sessions  
-* Two branches \- main and staging \- set up for testing in staging and main environments
 
-### **Single Organization Approach**
+### **Current Setup - Prod**
 
-Both staging and production projects will be in the same Supabase organization for cost optimization while maintaining complete database isolation.
+* **Organization:** new-admissions-landing-page
+* **Project:** apply-new-adms-lp-v2-prod
+* **Table:** form\_sessions  
+
+
+### **Single Organization Approach, Dual Projects Setup**
+
+Both staging and production projects will be in the same Supabase organization but would be in two projects - one for staging and one for prod. 
 
 ## **Netlify Deployment Setup**
 
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Netlify Site:** staging-v3-admissions-bch.netlify.app  
+* **Netlify Site:** https://staging-v2-apply-bch-in.netlify.app/
 * **GitHub Integration:** Staging branch auto-deploys to this site  
 * **Environment Variables:** Uses staging environment variables (stg)
 
