@@ -52,6 +52,22 @@ export default function FormContainer() {
   const [showEvaluationAnimation, setShowEvaluationAnimation] = useState(false);
   const [evaluatedLeadCategory, setEvaluatedLeadCategory] = useState<string | null>(null);
   
+  // Track form start when component mounts
+  useEffect(() => {
+    const trackFormStart = async () => {
+      try {
+        await saveFormDataIncremental(sessionId, 1, 'form_start', {
+          sessionId,
+          startTime
+        });
+      } catch (error) {
+        debugLog('Form start tracking error:', error);
+      }
+    };
+    
+    trackFormStart();
+  }, [sessionId, startTime]);
+  
   // Test database connectivity on mount
   useEffect(() => {
     const testConnectivity = async () => {
@@ -94,7 +110,7 @@ export default function FormContainer() {
       };
       
       // Track page 1 completion with incremental save
-      await trackPageCompletion(sessionId, 1, 'initial_lead_capture', completeStep1Data);
+      await trackPageCompletion(sessionId, 1, 'page1_complete', completeStep1Data);
       trackFormStepComplete(1);
       
       // If grade 7 or below, submit form immediately with DROP lead category
@@ -278,6 +294,20 @@ export default function FormContainer() {
 
   // Handle completion of evaluation animation
   const handleEvaluationComplete = () => {
+    // Track that lead has been evaluated
+    const trackLeadEvaluated = async () => {
+      try {
+        await saveFormDataIncremental(sessionId, 2, 'lead_evaluated', {
+          ...formData,
+          sessionId
+        });
+      } catch (error) {
+        debugLog('Lead evaluated tracking error:', error);
+      }
+    };
+    
+    trackLeadEvaluated();
+    
     setShowEvaluationAnimation(false);
     setSubmitting(false);
     setStep(2);
@@ -307,7 +337,7 @@ export default function FormContainer() {
         ...formData, 
         sessionId
       };
-      saveFormDataIncremental(sessionId, 2, 'page_2_view', page2Data);
+      saveFormDataIncremental(sessionId, 2, 'page2_view', page2Data);
     }
     
     // Scroll to top when step changes

@@ -18,7 +18,7 @@ export const generateSessionId = (): string => {
 };
 
 // Funnel stages
-export type FunnelStage = 'initial_capture' | 'contact_submitted' | 'counseling_booked' | 'completed';
+export type FunnelStage = 'form_start' | 'page1_complete' | 'lead_evaluated' | 'page2_view' | 'contact_details_entered' | 'counseling_booked' | 'form_complete' | 'abandoned';
 
 /**
  * Save form data incrementally using the simplified upsert function
@@ -133,17 +133,18 @@ export const trackFormSection = async (
     
     // Map section names to funnel stages
     const funnelStageMap: Record<string, FunnelStage> = {
-      'student_info_complete': 'initial_capture',
-      'academic_info_complete': 'initial_capture',
-      'preferences_complete': 'initial_capture',
-      'initial_lead_capture': 'initial_capture',
-      'contact_details_complete': 'contact_submitted',
+      'student_info_complete': 'page1_complete',
+      'academic_info_complete': 'page1_complete', 
+      'preferences_complete': 'page1_complete',
+      'initial_lead_capture': 'page1_complete',
+      'contact_details_complete': 'contact_details_entered',
       'counseling_slot_selected': 'counseling_booked',
-      'page_2_view': 'contact_submitted',
-      'final_submission': 'completed'
+      'page_2_view': 'page2_view',
+      'final_submission': 'form_complete',
+      'form_started': 'form_start'
     };
     
-    const funnelStage = funnelStageMap[sectionName] || 'initial_capture';
+    const funnelStage = funnelStageMap[sectionName] || 'page1_complete';
     
     // Save the data incrementally
     await saveFormDataIncremental(
@@ -171,7 +172,7 @@ export const trackPageCompletion = async (
   try {
     debugLog(`📄 Tracking page completion: Page ${pageNumber} (${pageType}) for session ${sessionId}`);
     
-    const funnelStage: FunnelStage = pageNumber === 1 ? 'initial_capture' : 'contact_submitted';
+    const funnelStage: FunnelStage = pageNumber === 1 ? 'page1_complete' : 'page2_view';
     
     // Save complete page data
     await saveFormDataIncremental(
@@ -199,7 +200,7 @@ export const trackFormSubmission = async (
     
     // Determine final funnel stage
     const hasSelectedCounseling = Boolean(formData.selectedDate && formData.selectedSlot);
-    const finalStage: FunnelStage = hasSelectedCounseling ? 'counseling_booked' : 'completed';
+    const finalStage: FunnelStage = hasSelectedCounseling ? 'counseling_booked' : 'form_complete';
     
     // Mark as final submission
     await saveFormDataIncremental(
@@ -278,6 +279,6 @@ export const trackStep = (
   formData: any
 ): void => {
   // Convert legacy calls to new format
-  const funnelStage: FunnelStage = stepNumber === 1 ? 'initial_capture' : 'contact_submitted';
+  const funnelStage: FunnelStage = stepNumber === 1 ? 'page1_complete' : 'page2_view';
   saveFormDataIncremental(sessionId, stepNumber, funnelStage, formData);
 };

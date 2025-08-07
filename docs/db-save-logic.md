@@ -60,18 +60,24 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 
 | Stage | Description | Trigger Condition |
 |---|---|---|
-| `initial_capture` | Initial form data captured | Page 1 completion or any Page 1 section |
-| `contact_submitted` | Contact information provided | Page 2 reached or contact details entered |
+| `form_start` | User has landed on the form page | Form component mounts and loads |
+| `page1_complete` | Page 1 form data submitted | Page 1 validation passes and data is submitted |
+| `lead_evaluated` | Lead profile has been evaluated | Evaluation animation completes for qualified leads |
+| `page2_view` | User has reached Page 2 | Page 2 loads (either counseling booking or contact form) |
+| `contact_details_entered` | Parent contact information provided | Parent name and email have been entered |
 | `counseling_booked` | Counseling session scheduled | Date and time slot selected |
-| `completed` | Form fully submitted | Final submission completed |
+| `form_complete` | Form fully submitted | Final submission completed successfully |
+| `abandoned` | User left without completing | Form abandonment detected |
 
 ### Funnel Stage Logic
 
 ```javascript
-// Funnel stage determination logic
-const funnelStage = pageNumber === 1 ? 'initial_capture' : 
-                   isCounsellingBooked ? 'counseling_booked' : 
-                   'contact_submitted';
+// Enhanced funnel stage determination logic
+const funnelStage = 
+  step === 1 ? 'page1_complete' :
+  step === 2 && isCounsellingBooked ? 'counseling_booked' :
+  step === 2 ? 'contact_details_entered' :
+  isComplete ? 'form_complete' : 'page2_view';
 ```
 
 ## Lead Categories
@@ -154,7 +160,7 @@ Primary function for saving form data with upsert logic:
 await saveFormDataIncremental(
   sessionId,
   1,
-  'initial_capture',
+  'page1_complete',
   {
     form_filler_type: 'parent',
     student_name: 'John Doe',
@@ -186,9 +192,14 @@ Custom PostgreSQL function that handles:
 
 ### Save Sequence
 
-1. **Form Section Completion** → `trackFormSection()` → `saveFormDataIncremental()`
-2. **Page Completion** → `trackPageCompletion()` → `saveFormDataIncremental()`
-3. **Form Submission** → `trackFormSubmission()` → `saveFormDataIncremental()`
+1. **Form Start** → `form_start` stage set when form loads
+2. **Form Section Completion** → `trackFormSection()` → `saveFormDataIncremental()`
+3. **Page 1 Completion** → `trackPageCompletion()` → `page1_complete` stage
+4. **Lead Evaluation** → (qualified leads only) → `lead_evaluated` stage
+5. **Page 2 View** → `page2_view` stage when user reaches second page
+6. **Contact Details** → `contact_details_entered` when parent info provided
+7. **Counseling Booking** → (qualified leads only) → `counseling_booked` stage
+8. **Form Submission** → `trackFormSubmission()` → `form_complete` stage
 
 ### Dual-Save Architecture
 
@@ -272,5 +283,4 @@ VITE_REGISTRATION_WEBHOOK_URL=<make.com-webhook-url>
 | **Environment Variables** | Connection errors | Verify all `VITE_` prefixed variables |
 | **RLS Policy Conflicts** | Permission denied errors | Review and update RLS policies |
 | **Data Type Mismatches** | Validation failures | Check field mappings and types |
-
-This documentation provides a comprehensive overview of the database save logic, field specifications, and operational considerations for the Beacon House application.
+| **Test Values in Production** | `funnel_stage: 'test'` appears | These are from `testUpsertFunction()` and are expected during testing |

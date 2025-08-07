@@ -80,7 +80,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
   // Track parent details completion
   React.useEffect(() => {
     if (parentName && email) {
-      trackSectionCompletion('contact_details_complete', {
+      trackSectionCompletion('contact_details_entered', {
         parentName,
         email,
         leadCategory,

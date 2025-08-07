@@ -153,7 +153,7 @@ export const testUpsertFunction = async (): Promise<boolean> => {
       environment: 'test',
       form_filler_type: 'parent',
       current_grade: '10',
-      funnel_stage: 'test',
+      funnel_stage: 'test', // Note: 'test' is used specifically for testing purposes and should not appear in regular production data
       created_at: new Date().toISOString()
     };
 
