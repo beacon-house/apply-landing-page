@@ -61,7 +61,8 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 | Stage | Description | Trigger Condition |
 |---|---|---|
 | `form_start` | User has landed on the form page | Form component mounts and loads |
-| `page1_complete` | Page 1 form data submitted | Page 1 validation passes and data is submitted |
+| `page1_in_progress` | User is actively filling Page 1 | User has started interacting with Page 1 fields |
+| `page1_submitted` | Page 1 form data submitted | Page 1 validation passes and data is submitted |
 | `lead_evaluated` | Lead profile has been evaluated | Evaluation animation completes for qualified leads |
 | `page2_view` | User has reached Page 2 | Page 2 loads (either counseling booking or contact form) |
 | `contact_details_entered` | Parent contact information provided | Parent name and email have been entered |
@@ -74,7 +75,7 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 ```javascript
 // Enhanced funnel stage determination logic
 const funnelStage = 
-  step === 1 ? 'page1_complete' :
+  step === 1 ? 'page1_submitted' :
   step === 2 && isCounsellingBooked ? 'counseling_booked' :
   step === 2 ? 'contact_details_entered' :
   isComplete ? 'form_complete' : 'page2_view';
@@ -193,13 +194,14 @@ Custom PostgreSQL function that handles:
 ### Save Sequence
 
 1. **Form Start** → `form_start` stage set when form loads
-2. **Form Section Completion** → `trackFormSection()` → `saveFormDataIncremental()`
-3. **Page 1 Completion** → `trackPageCompletion()` → `page1_complete` stage
-4. **Lead Evaluation** → (qualified leads only) → `lead_evaluated` stage
-5. **Page 2 View** → `page2_view` stage when user reaches second page
-6. **Contact Details** → `contact_details_entered` when parent info provided
-7. **Counseling Booking** → (qualified leads only) → `counseling_booked` stage
-8. **Form Submission** → `trackFormSubmission()` → `form_complete` stage
+2. **First Interaction** → `page1_in_progress` stage when user starts filling Page 1
+3. **Form Section Completion** → `trackFormSection()` → `saveFormDataIncremental()`
+4. **Page 1 Submission** → `trackPageCompletion()` → `page1_submitted` stage
+5. **Lead Evaluation** → (qualified leads only) → `lead_evaluated` stage
+6. **Page 2 View** → `page2_view` stage when user reaches second page
+7. **Contact Details** → `contact_details_entered` when parent info provided
+8. **Counseling Booking** → (qualified leads only) → `counseling_booked` stage
+9. **Form Submission** → `trackFormSubmission()` → `form_complete` stage
 
 ### Dual-Save Architecture
 

@@ -72,7 +72,7 @@ export const submitFormData = async (
   const isCounsellingBooked = Boolean(data.selectedDate && data.selectedSlot);
   
   // Determine funnel stage
-  let funnelStage = 'page1_complete';
+  let funnelStage = 'page1_submitted';
   if (step === 2) {
     if (isCounsellingBooked) {
       funnelStage = 'counseling_booked';

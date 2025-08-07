@@ -109,8 +109,8 @@ export default function FormContainer() {
         sessionId
       };
       
-      // Track page 1 completion with incremental save
-      await trackPageCompletion(sessionId, 1, 'page1_complete', completeStep1Data);
+      // Track page 1 submission with incremental save
+      await trackPageCompletion(sessionId, 1, 'page1_submitted', completeStep1Data);
       trackFormStepComplete(1);
       
       // If grade 7 or below, submit form immediately with DROP lead category

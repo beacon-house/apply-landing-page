@@ -18,7 +18,7 @@ export const generateSessionId = (): string => {
 };
 
 // Funnel stages
-export type FunnelStage = 'form_start' | 'page1_complete' | 'lead_evaluated' | 'page2_view' | 'contact_details_entered' | 'counseling_booked' | 'form_complete' | 'abandoned';
+export type FunnelStage = 'form_start' | 'page1_in_progress' | 'page1_submitted' | 'lead_evaluated' | 'page2_view' | 'contact_details_entered' | 'counseling_booked' | 'form_complete' | 'abandoned';
 
 /**
  * Save form data incrementally using the simplified upsert function
@@ -133,10 +133,11 @@ export const trackFormSection = async (
     
     // Map section names to funnel stages
     const funnelStageMap: Record<string, FunnelStage> = {
-      'student_info_complete': 'page1_complete',
-      'academic_info_complete': 'page1_complete', 
-      'preferences_complete': 'page1_complete',
-      'initial_lead_capture': 'page1_complete',
+      'student_info_complete': 'page1_in_progress',
+      'academic_info_complete': 'page1_in_progress', 
+      'preferences_complete': 'page1_in_progress',
+      'initial_lead_capture': 'page1_in_progress',
+      'form_interaction_started': 'page1_in_progress',
       'contact_details_complete': 'contact_details_entered',
       'counseling_slot_selected': 'counseling_booked',
       'page_2_view': 'page2_view',
@@ -172,7 +173,7 @@ export const trackPageCompletion = async (
   try {
     debugLog(`📄 Tracking page completion: Page ${pageNumber} (${pageType}) for session ${sessionId}`);
     
-    const funnelStage: FunnelStage = pageNumber === 1 ? 'page1_complete' : 'page2_view';
+    const funnelStage: FunnelStage = pageNumber === 1 ? 'page1_submitted' : 'page2_view';
     
     // Save complete page data
     await saveFormDataIncremental(
