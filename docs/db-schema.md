@@ -2,7 +2,7 @@
 CREATE TABLE public.form_sessions (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     session_id text NOT NULL,
-    environment text DEFAULT 'staging'::text,
+    environment text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     form_filler_type text,
