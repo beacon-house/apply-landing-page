@@ -73,6 +73,7 @@ export const saveFormDataIncremental = async (
       is_qualified_lead: isQualifiedLead,
       page_completed: pageNumber,
       triggered_events: [],
+      triggered_events: formData.triggeredEvents || [],
       
       created_at: new Date().toISOString()
     };

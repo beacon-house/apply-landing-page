@@ -1,12 +1,12 @@
 /**
- * Form Store v8.0
+ * Form Store v8.1
  * 
- * Purpose: Zustand store for managing simplified 2-page form state.
+ * Purpose: Zustand store for managing 2-page form state with Meta Pixel event tracking.
  * Handles form data, step navigation, and submission status.
  * 
  * Changes made:
- * - Removed CAPI-related state (triggeredEvents, eventId)
- * - Simplified to core form functionality
+ * - Re-added triggeredEvents for Meta Pixel event tracking
+ * - Added event management functions
  */
 
 import { create } from 'zustand';
@@ -22,10 +22,13 @@ interface FormState {
   isSubmitted: boolean;
   startTime: number;
   sessionId: string;
+  triggeredEvents: string[];
   setStep: (step: number) => void;
   updateFormData: (data: Partial<CompleteFormData>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setSubmitted: (isSubmitted: boolean) => void;
+  addTriggeredEvents: (events: string[]) => void;
+  clearTriggeredEvents: () => void;
   resetForm: () => void;
   canProceed: (step: number) => boolean;
 }
@@ -37,6 +40,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   isSubmitted: false,
   startTime: Date.now(),
   sessionId: generateSessionId(),
+  triggeredEvents: [],
   
   setStep: (step) => {
     set({ currentStep: step });
@@ -52,13 +56,20 @@ export const useFormStore = create<FormState>((set, get) => ({
   
   setSubmitted: (isSubmitted) => set({ isSubmitted }),
   
+  addTriggeredEvents: (events) => set((state) => ({
+    triggeredEvents: [...state.triggeredEvents, ...events]
+  })),
+  
+  clearTriggeredEvents: () => set({ triggeredEvents: [] }),
+  
   resetForm: () => set({
     currentStep: 1,
     formData: {},
     isSubmitting: false,
     isSubmitted: false,
     startTime: Date.now(),
-    sessionId: generateSessionId()
+    sessionId: generateSessionId(),
+    triggeredEvents: []
   }),
   
   canProceed: (step) => {

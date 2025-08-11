@@ -1,11 +1,11 @@
 /**
- * FormContainer Component v8.0
+ * FormContainer Component v8.1
  * 
- * Purpose: Main orchestrator for the simplified 2-page form.
+ * Purpose: Main orchestrator for the 2-page form with Meta Pixel event tracking.
  * 
  * Changes made:
- * - Removed CAPI and Meta Pixel event tracking
- * - Simplified to core form functionality
+ * - Added comprehensive Meta Pixel event tracking
+ * - Integrated event firing throughout form flow
  */
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -18,6 +18,7 @@ import { useFormStore } from '@/store/formStore';
 import { trackFormView, trackFormStepComplete, trackFormAbandonment, trackFormError } from '@/lib/analytics';
 import { submitFormData, validateForm, FormValidationError } from '@/lib/form';
 import { determineLeadCategory } from '@/lib/leadCategorization';
+import { fireFormProgressionEvents, firePageViewEvent } from '@/lib/metaPixelEvents';
 import { toast } from '@/components/ui/toast';
 import { trackStep } from '@/lib/formTracking';
 import { 
@@ -37,10 +38,12 @@ export default function FormContainer() {
     isSubmitted,
     startTime,
     sessionId,
+    triggeredEvents,
     setStep,
     updateFormData,
     setSubmitting,
-    setSubmitted
+    setSubmitted,
+    addTriggeredEvents
   } = useFormStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +57,10 @@ export default function FormContainer() {
   
   // Track form start when component mounts
   useEffect(() => {
+    // Fire page view event
+    const pageViewEvents = firePageViewEvent();
+    addTriggeredEvents(pageViewEvents);
+    
     const trackFormStart = async () => {
       try {
         await saveFormDataIncremental(sessionId, 1, 'form_start', {
@@ -117,11 +124,15 @@ export default function FormContainer() {
         
         updateFormData({ lead_category: leadCategory });
         
+        // Fire Meta Pixel events for form completion
+        const formCompleteEvents = fireFormProgressionEvents('form_complete', finalData);
+        addTriggeredEvents(formCompleteEvents);
+        
         // Track final submission for grade 7 below
         await trackFormSubmission(sessionId, finalData, true);
         
         // Submit form with lead category
-        await submitFormData(finalData, 1, startTime, true);
+        await submitFormData(finalData, 1, startTime, true, [...triggeredEvents, ...formCompleteEvents]);
         setSubmitting(false);
         setSubmitted(true);
         return;
@@ -154,14 +165,22 @@ export default function FormContainer() {
         lead_category: leadCategory
       };
       
+      // Fire Meta Pixel events for Page 1 completion
+      const page1Events = fireFormProgressionEvents('page_1_complete', finalData);
+      addTriggeredEvents(page1Events);
+      
       // If form is filled by student, submit immediately regardless of other conditions
       if (data.formFillerType === 'student') {
         setSubmitting(true);
         
+        // Fire Meta Pixel events for student direct submission
+        const studentCompleteEvents = fireFormProgressionEvents('form_complete', finalData);
+        addTriggeredEvents(studentCompleteEvents);
+        
         // Track student direct submission
         await trackFormSubmission(sessionId, finalData, true);
         
-        await submitFormData(finalData, 1, startTime, true);
+        await submitFormData(finalData, 1, startTime, true, [...triggeredEvents, ...studentCompleteEvents]);
         setSubmitting(false);
         setSubmitted(true);
         return;
@@ -182,6 +201,10 @@ export default function FormContainer() {
         // Disqualified leads go directly to Page 2B (contact info only)
         window.scrollTo(0, 0);
         setStep(2);
+        
+        // Fire Page 2 view events for disqualified leads
+        const page2ViewEvents = fireFormProgressionEvents('page_2_view', finalData);
+        addTriggeredEvents(page2ViewEvents);
       }
       
     } catch (error) {
@@ -226,21 +249,30 @@ export default function FormContainer() {
       // CRITICAL: Update Zustand store FIRST with Page 2 data before any events are fired
       updateFormData(data);
       
-      await validateForm(2, { ...formData, ...data });
-      setSubmitting(true);
-      
-      // Prepare final data for submission
+      // Prepare final data for events
       const finalSubmissionData = {
         ...formData,
         ...data,
         sessionId
       };
       
+      // Fire Page 2 submit events
+      const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', finalSubmissionData);
+      addTriggeredEvents(page2SubmitEvents);
+      
+      // Fire form complete events
+      const formCompleteEvents = fireFormProgressionEvents('form_complete', finalSubmissionData);
+      addTriggeredEvents(formCompleteEvents);
+      
+      await validateForm(2, { ...formData, ...data });
+      setSubmitting(true);
+      
       // Track final submission to database
       await trackFormSubmission(sessionId, finalSubmissionData, true);
       
       // Submit all form data including counselling details
-      await submitFormData(finalSubmissionData, 2, startTime, true);
+      const allTriggeredEvents = [...triggeredEvents, ...page2SubmitEvents, ...formCompleteEvents];
+      await submitFormData(finalSubmissionData, 2, startTime, true, allTriggeredEvents);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -257,21 +289,30 @@ export default function FormContainer() {
       // CRITICAL: Update Zustand store FIRST with Page 2 data before any events are fired
       updateFormData(data);
       
-      await validateForm(2, { ...formData, ...data });
-      setSubmitting(true);
-      
-      // Prepare final data for submission
+      // Prepare final data for events
       const finalSubmissionData = {
         ...formData,
         ...data,
         sessionId
       };
       
+      // Fire Page 2 submit events
+      const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', finalSubmissionData);
+      addTriggeredEvents(page2SubmitEvents);
+      
+      // Fire form complete events
+      const formCompleteEvents = fireFormProgressionEvents('form_complete', finalSubmissionData);
+      addTriggeredEvents(formCompleteEvents);
+      
+      await validateForm(2, { ...formData, ...data });
+      setSubmitting(true);
+      
       // Track final submission to database
       await trackFormSubmission(sessionId, finalSubmissionData, true);
       
       // Submit all form data
-      await submitFormData(finalSubmissionData, 2, startTime, true);
+      const allTriggeredEvents = [...triggeredEvents, ...page2SubmitEvents, ...formCompleteEvents];
+      await submitFormData(finalSubmissionData, 2, startTime, true, allTriggeredEvents);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -302,6 +343,14 @@ export default function FormContainer() {
     setShowEvaluationAnimation(false);
     setSubmitting(false);
     setStep(2);
+    
+    // Fire Page 2 view events when moving to qualified lead form
+    const page2ViewEvents = fireFormProgressionEvents('page_2_view', {
+      ...formData,
+      sessionId
+    });
+    addTriggeredEvents(page2ViewEvents);
+    
     trackFormStepComplete(1);
     // Scroll to top when moving to next step
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -322,7 +371,8 @@ export default function FormContainer() {
 
   // Fire Page 2 view events when step 2 is reached
   useEffect(() => {
-    if (currentStep === 2 && formData.lead_category) {
+    if (currentStep === 2 && formData.lead_category && !['bch', 'lum-l1', 'lum-l2'].includes(formData.lead_category)) {
+      // For disqualified leads, fire page 2 view events if not already fired
       // Save page 2 view data incrementally
       const page2Data = { 
         ...formData, 
@@ -330,10 +380,7 @@ export default function FormContainer() {
       };
       saveFormDataIncremental(sessionId, 2, 'page2_view', page2Data);
     }
-    
-    // Scroll to top when step changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentStep, formData.lead_category, sessionId]);
+  }, [currentStep, formData.lead_category, sessionId, triggeredEvents, addTriggeredEvents]);
 
   // Evaluation steps for regular evaluation animation
   const evaluationSteps = [
