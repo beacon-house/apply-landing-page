@@ -31,6 +31,7 @@ interface FormState {
   clearTriggeredEvents: () => void;
   resetForm: () => void;
   canProceed: (step: number) => boolean;
+  getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[] };
 }
 
 export const useFormStore = create<FormState>((set, get) => ({
@@ -47,6 +48,11 @@ export const useFormStore = create<FormState>((set, get) => ({
     // Scroll to top of the form when changing steps
     window.scrollTo(0, 0);
   },
+  
+  getLatestFormData: () => ({
+    formData: get().formData,
+    triggeredEvents: get().triggeredEvents
+  })
   
   updateFormData: (data) => set((state) => ({
     formData: { ...state.formData, ...data }
