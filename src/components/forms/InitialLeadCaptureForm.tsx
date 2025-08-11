@@ -98,6 +98,22 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   // Watch all form fields for tracking
   const watchedFields = watch();
   
+  // Track when user first starts interacting with the form
+  React.useEffect(() => {
+    const hasStartedFilling = !!(
+      watchedFields.formFillerType ||
+      watchedFields.studentName ||
+      watchedFields.currentGrade
+    );
+
+    if (hasStartedFilling) {
+      trackSectionCompletion('form_interaction_started', {
+        sessionId,
+        firstInteraction: true
+      });
+    }
+  }, [watchedFields.formFillerType, watchedFields.studentName, watchedFields.currentGrade, sessionId]);
+
   // Expose setFocus method to parent component via ref
   useImperativeHandle(ref, () => ({
     setFocus: (fieldName: keyof InitialLeadCaptureData) => {

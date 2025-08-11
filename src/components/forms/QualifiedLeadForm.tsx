@@ -213,7 +213,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   // Track parent details completion
   React.useEffect(() => {
     if (parentName && email) {
-      trackSectionCompletion('parent_details_complete', {
+      trackSectionCompletion('contact_details_entered', {
         parentName,
         email,
         sessionId

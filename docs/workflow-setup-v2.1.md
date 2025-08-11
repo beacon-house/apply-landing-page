@@ -15,7 +15,7 @@ New admissions landing page for Beacon House with simplified form structure, dat
 
 ### **GitHub Repository**
 
-* **Repository:** https://github.com/beacon-house/new-admissions-landing-page  
+* **Repository:** https://github.com/beacon-house/apply-landing-page
 * **Main Branch:** main \- Production-ready code  
 * **Staging Branch:** staging \- Development/testing branch
 
@@ -32,7 +32,7 @@ New admissions landing page for Beacon House with simplified form structure, dat
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Domain:** staging-v3-admissions-bch.netlify.app  
+* **Domain:** https://staging-v2-apply-bch-in.netlify.app/
 * **Purpose:** Testing and validation
 
 ### **Environment Variables (Staging)**
@@ -67,23 +67,29 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[production-webhook-url\]
 
 ## **Database \- Supabase**
 
-### **Current Setup**
+### **Current Setup - Staging**
 
-* **Organization:** beacon-house-projects  
-* **Project:** new-admissions-landing-page  
+* **Organization:** new-admissions-landing-page
+* **Project:** apply-new-adms-lp-v2-staging
 * **Table:** form\_sessions  
-* Two branches \- main and staging \- set up for testing in staging and main environments
 
-### **Single Organization Approach**
+### **Current Setup - Prod**
 
-Both staging and production projects will be in the same Supabase organization for cost optimization while maintaining complete database isolation.
+* **Organization:** new-admissions-landing-page
+* **Project:** apply-new-adms-lp-v2-prod
+* **Table:** form\_sessions  
+
+
+### **Single Organization Approach, Dual Projects Setup**
+
+Both staging and production projects will be in the same Supabase organization but would be in two projects - one for staging and one for prod. 
 
 ## **Netlify Deployment Setup**
 
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Netlify Site:** staging-v3-admissions-bch.netlify.app  
+* **Netlify Site:** https://staging-v2-apply-bch-in.netlify.app/
 * **GitHub Integration:** Staging branch auto-deploys to this site  
 * **Environment Variables:** Uses staging environment variables (stg)
 
@@ -112,11 +118,11 @@ Both staging and production projects will be in the same Supabase organization f
 
 ### **Staging Data Flow**
 
-**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("02.staging-admissions-bch page v3 \- WIP") → **Google Sheet** (staging-v4 tab) \+ **Email** (nkgoutham@gmail.com) \+ **Calendar Invite**
+**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.stg-apply-bch page v2") → **Google Sheet** (apply-beaconhouse.in leads > staging-v2 tab) \+ **Email** (nkgoutham@gmail.com) \+ **Calendar Invite**
 
 ### **Production Data Flow**
 
-**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** → **Google Sheet** (prod-v4 tab) \+ **Email** (Vishy & Karthik) \+ **Calendar Invite**
+**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.prod-apply-bch page v2") → **Google Sheet** (prod-v4 tab) \+ **Email** (Vishy & Karthik) \+ **Calendar Invite**
 
 ## **Data Storage Structure**
 
@@ -128,24 +134,11 @@ Both staging and production projects will be in the same Supabase organization f
 
 ### **Google Spreadsheet Backup**
 
-* **Spreadsheet:** "admissions-beaconhouse-in \- leads"  
-* **Staging Tab:** staging-v4  
-* **Production Tab:** prod-v4  
-* **Purpose:** Backup storage and manual analysis
+* **Spreadsheet:** "apply-beaconhouse.in leads"  
+* **Staging Tab:** staging-v2  
+* **Production Tab:** prod-v2  
+* **Purpose:** Actual leads repository and manual analysis
 
-## **Make.com Integration**
-
-### **Staging Scenario**
-
-* **Name:** "02.staging-admissions-bch page v3 \- WIP"  
-* **Webhook URL:** Connected to staging environment  
-* **Recipients:** nkgoutham@gmail.com
-
-### **Production Scenario**
-
-* **Name:** done  
-* **Webhook URL:** Connected to production environment  
-* **Recipients:** Vishy & Karthik email addresses
 
 ## **Lead Categorization Logic**
 
@@ -210,139 +203,11 @@ Both staging and production projects will be in the same Supabase organization f
 * **New Landing Page:** apply.beaconhouse.in (live production site)  
 * **Strategy:** Both landing pages running simultaneously
 
-## **Production Deployment \- Completed**
-
-The following production deployment steps have been completed:
-
-1. ✅ **Supabase project created** in beacon-house-projects org  
-2. ✅ **Main branch deployed** to apply.beaconhouse.in via Netlify  
-3. ✅ **Domain configured** \- apply.beaconhouse.in is live  
-4. ✅ **Make.com scenario duplicated** with production webhook URL  
-5. ✅ **Email recipients updated** to Vishy & Karthik  
-6. ✅ **Complete data flow tested** and operational
-
-**Status:** Production site is live and fully operational at apply.beaconhouse.in
-
-## **Meta CAPI Integration via Edge Function**
-
-### **Supabase Edge Function - meta-capi**
-
-* **Purpose:** Server-side Meta Conversions API (CAPI) integration
-* **Function Name:** `meta-capi`
-* **Location:** `supabase/functions/meta-capi/index.ts`
-* **Deployment:** Deployed to both `staging` and `main` branches in Supabase
-
-### **Edge Function Workflow**
-
-1. **Receives Event Data:** Frontend sends form data + Meta Pixel events to Edge Function
-2. **Stape.io Integration:** Forwards events to Stape.io CAPI Gateway for Meta
-3. **Make.com Integration:** Sends form data to branch-specific Make.com webhook
-4. **Dual Success Response:** Returns success status for both integrations
-
-### **Supabase Secrets Configuration**
-
-#### **Branch-Specific Secrets**
-
-The Edge Function uses **branch-specific secrets** to automatically route to the correct services:
-
-**Staging Branch Secrets:**
-```
-STAPE_CAPIG_API_KEY=[staging-api-key]
-STAPE_CAPIG_URL=[staging-stape-url]
-MAKE_WEBHOOK_URL=[staging-make-webhook-url]
-```
-
-**Main Branch Secrets:**
-```
-STAPE_CAPIG_API_KEY=[production-api-key]
-STAPE_CAPIG_URL=[production-stape-url]
-MAKE_WEBHOOK_URL=[production-make-webhook-url]
-```
-
-#### **How Branch-Specific Secrets Work**
-
-* **Automatic Resolution:** Supabase automatically provides the correct secret values based on the branch the Edge Function is deployed to
-* **No Conditional Logic:** The Edge Function code is identical in both branches - it simply calls `Deno.env.get('MAKE_WEBHOOK_URL')` and receives the appropriate value
-* **Environment Isolation:** Complete separation between staging and production configurations
-
-### **Meta CAPI (Conversions API) Integration**
-
-#### **Stape.io CAPI Gateway**
-
-* **Purpose:** Secure server-side Meta Pixel event forwarding
-* **Technology:** Stape.io as CAPI Gateway provider
-* **Authentication:** API key-based authentication
-* **Data Flow:** Edge Function → Stape.io → Meta CAPI
-
-#### **CAPI Payload Structure**
-
-```javascript
-{
-  event_name: "apply_page_1_continue_stg", // Environment-specific event name
-  event_id: "unique-event-id", // For deduplication
-  event_time: 1640995200, // Unix timestamp
-  user_data: {
-    em: ["email@domain.com"], // Hashed email
-    ph: ["+919876543210"], // Hashed phone
-    fn: ["John"], // Hashed first name
-    ln: ["Doe"] // Hashed last name
-  },
-  custom_data: {
-    lead_category: "bch",
-    form_filler_type: "parent",
-    current_grade: "11",
-    // ... other form fields
-  },
-  source_url: "https://admissions.beaconhouse.in",
-  event_source_url: "https://admissions.beaconhouse.in/application-form"
-}
-```
-
-#### **Event Deduplication**
-
-* **Event ID:** Each event gets a unique `eventId` for deduplication between browser and server events
-* **Consistent Naming:** Browser events and server events use the same event names
-* **Meta Processing:** Meta's system automatically deduplicates events with matching `event_id`
-
-## **Complete Data Flow Architecture**
-
-### **Form Submission Pipeline**
-
-```
-Frontend Form Submission
-    ↓
-1. Browser Meta Pixel Event (with eventId)
-    ↓
-2. FormContainer.tsx → Edge Function Call
-    ↓
-3. Edge Function Processing:
-    a. Fetch branch-specific secrets
-    b. Send to Stape.io CAPI Gateway
-    c. Send to Make.com webhook
-    ↓
-4. Parallel Processing:
-    a. Stape.io → Meta CAPI (server-side)
-    b. Make.com → Google Sheets + Email + Calendar
-    ↓
-5. Database Storage (Supabase)
-```
-
-### **Environment-Specific Routing**
-
-* **Staging:** `staging-v3-admissions-bch.netlify.app` → Supabase `staging` branch → Staging Make.com webhook
-* **Production:** `apply.beaconhouse.in` → Supabase `main` branch → Production Make.com webhook
-
-### **Error Handling**
-
-* **Stape.io Failure:** Logged but doesn't block Make.com webhook
-* **Make.com Failure:** Logged but doesn't block Stape.io CAPI
-* **Partial Success:** Function returns success status for each integration separately
 
 ## **Security & Best Practices**
 
 ### **Secret Management**
 
-* **Branch Isolation:** Secrets are completely isolated between staging and production
 * **No Hardcoded Values:** All sensitive data stored in Supabase Edge Function secrets
 * **Automatic Injection:** Secrets injected at runtime by Supabase platform
 
@@ -353,55 +218,5 @@ Frontend Form Submission
 
 ### **Data Privacy**
 
-* **User Data Hashing:** Email, phone, and name data hashed before sending to Meta CAPI
 * **Minimal Data Transfer:** Only necessary form fields included in payloads
 * **Compliance:** Structure supports GDPR/privacy compliance requirements
-
-## **Troubleshooting & Monitoring**
-
-### **Edge Function Logs**
-
-* **Access:** Supabase Dashboard → Edge Functions → Function Name → Logs
-* **Key Indicators:**
-  - `📥 Received event data:` - Confirms function received call
-  - `📤 Sending to Stape.io:` - Confirms CAPI attempt
-  - `📤 Sending to Make.com webhook` - Confirms webhook attempt
-  - `✅ Successfully sent...` - Confirms successful delivery
-
-### **Common Issues**
-
-* **Secret Not Found:** Check branch-specific secret configuration
-* **Webhook Failure:** Verify Make.com webhook URL and scenario status
-* **CAPI Failure:** Check Stape.io API key and endpoint configuration
-
-### **Testing Edge Function**
-
-```bash
-# Test staging
-curl -X POST https://[staging-project-id].supabase.co/functions/v1/meta-capi \
-  -H "Authorization: Bearer [staging-anon-key]" \
-  -H "Content-Type: application/json" \
-  -d '{"eventName":"test_event","eventId":"test-123","formData":{"test":"data"}}'
-
-# Test production
-curl -X POST https://[production-project-id].supabase.co/functions/v1/meta-capi \
-  -H "Authorization: Bearer [production-anon-key]" \
-  -H "Content-Type: application/json" \
-  -d '{"eventName":"test_event","eventId":"test-123","formData":{"test":"data"}}'
-```
-
-## **Future Enhancements**
-
-### **Potential Improvements**
-
-* **Enhanced Error Handling:** Implement retry logic for failed webhook calls
-* **Rate Limiting:** Add request throttling for high-volume scenarios
-* **Metrics Collection:** Add performance monitoring and success rate tracking
-* **CORS Tightening:** Restrict origins to specific domains for production
-* **Webhook Validation:** Add signature verification for Make.com webhooks
-
-### **Scalability Considerations**
-
-* **Edge Function Limits:** Monitor function execution time and memory usage
-* **Secret Rotation:** Plan for periodic API key rotation
-* **Load Testing:** Validate performance under high form submission volumes
