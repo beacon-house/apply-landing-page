@@ -232,3 +232,14 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[production-webhook-url\]
 
 * **Minimal Data Transfer:** Only necessary form fields included in payloads
 * **Compliance:** Structure supports GDPR/privacy compliance requirements
+
+## **Troubleshooting Guide**
+
+### **Common Issues**
+
+| Issue | Symptoms | Solution |
+|---|---|---|
+| **RPC Function Missing** | Fallback saves only | Deploy `upsert_form_session` to current Supabase branch |
+| **Environment Variables** | Connection errors | Verify all `VITE_` prefixed variables match current branch |
+| **Branch Mismatch** | Wrong data/environment | Ensure correct Supabase branch is selected |
+| **RLS Policy Conflicts** | Permission denied errors | Review and update RLS policies on current branch |
