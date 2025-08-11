@@ -57,10 +57,6 @@ export default function FormContainer() {
   
   // Track form start when component mounts
   useEffect(() => {
-    // Fire page view event
-    const pageViewEvents = firePageViewEvent();
-    addTriggeredEvents(pageViewEvents);
-    
     const trackFormStart = async () => {
       try {
         await saveFormDataIncremental(sessionId, 1, 'form_start', {

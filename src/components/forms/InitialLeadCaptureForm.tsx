@@ -73,7 +73,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   ({ onSubmit, defaultValues }, ref) => {
   const [showStickyButton, setShowStickyButton] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { sessionId } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents } = useFormStore();
   
   const {
     register,
@@ -249,7 +249,9 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   // Track form sections as user completes them
   const trackSectionCompletion = async (sectionName: string, sectionData: any) => {
     try {
-      await trackFormSection(sessionId, sectionName, sectionData, 1);
+      // Create a comprehensive snapshot of the form data including all current triggeredEvents
+      const snapshotFormData = { ...storeFormData, ...sectionData, triggeredEvents };
+      await trackFormSection(sessionId, sectionName, 1, snapshotFormData);
     } catch (error) {
       console.error('Section tracking error:', error);
       // Don't break form flow
