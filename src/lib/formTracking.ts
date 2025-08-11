@@ -30,12 +30,6 @@ export const saveFormDataIncremental = async (
   formData: any
 ): Promise<void> => {
   try {
-    // Get and validate environment value
-    const envValue = import.meta.env.VITE_ENVIRONMENT?.trim();
-    if (!envValue) {
-      errorLog('VITE_ENVIRONMENT is not set or empty in formTracking:', import.meta.env.VITE_ENVIRONMENT);
-    }
-    
     // Determine if counseling is booked
     const isCounsellingBooked = Boolean(formData.selectedDate && formData.selectedSlot);
     
@@ -45,7 +39,7 @@ export const saveFormDataIncremental = async (
     // Prepare form data with consistent snake_case field names matching database schema
     const dbFormData = {
       session_id: sessionId,
-      environment: envValue,
+      environment: import.meta.env.VITE_ENVIRONMENT?.trim(),
       
       // Page 1: Student Information - using snake_case
       form_filler_type: formData.formFillerType,

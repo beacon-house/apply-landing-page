@@ -2,7 +2,7 @@
 CREATE TABLE public.form_sessions (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     session_id text NOT NULL,
-    environment text,
+    environment text DEFAULT 'staging'::text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     form_filler_type text,
@@ -172,7 +172,7 @@ BEGIN
   )
   ON CONFLICT (session_id)
   DO UPDATE SET
-    environment = EXCLUDED.environment,
+    environment = COALESCE(EXCLUDED.environment, form_sessions.environment),
     form_filler_type = COALESCE(EXCLUDED.form_filler_type, form_sessions.form_filler_type),
     current_grade = COALESCE(EXCLUDED.current_grade, form_sessions.current_grade),
     phone_number = COALESCE(EXCLUDED.phone_number, form_sessions.phone_number),
