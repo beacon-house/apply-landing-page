@@ -1,112 +1,8 @@
--- Create the form_sessions table
-CREATE TABLE public.form_sessions (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    session_id text NOT NULL,
-    environment text,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now(),
-    form_filler_type text,
-    current_grade text,
-    phone_number text,
-    curriculum_type text,
-    grade_format text,
-    gpa_value text,
-    percentage_value text,
-    school_name text,
-    scholarship_requirement text,
-    target_geographies jsonb,
-    parent_name text,
-    parent_email text,
-    selected_date text,
-    selected_slot text,
-    lead_category text,
-    is_counselling_booked boolean DEFAULT false,
-    funnel_stage text DEFAULT 'initial_capture'::text,
-    is_qualified_lead boolean DEFAULT false,
-    page_completed integer DEFAULT 1,
-    triggered_events jsonb DEFAULT '[]'::jsonb,
-    student_name text,
-    PRIMARY KEY (id),
-    CONSTRAINT form_sessions_session_id_key UNIQUE (session_id)
-);
+-- Update the existing table to remove the 'staging' default
+ALTER TABLE public.form_sessions 
+ALTER COLUMN environment DROP DEFAULT;
 
--- Enable Row Level Security
-ALTER TABLE public.form_sessions ENABLE ROW LEVEL SECURITY;
-
--- Create indexes
-CREATE INDEX IF NOT EXISTS form_sessions_session_id_idx ON public.form_sessions (session_id);
-
--- Create a trigger for updating the updated_at timestamp
-CREATE OR REPLACE FUNCTION public.update_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER update_form_sessions_timestamp
-BEFORE UPDATE ON public.form_sessions
-FOR EACH ROW
-EXECUTE FUNCTION public.update_timestamp();
-
--- Create RLS policies
--- Corrected policies that don't rely on a created_by column
-
--- Allow authenticated users to select all form sessions
--- This is a permissive policy that can be adjusted based on your security requirements
-CREATE POLICY "Authenticated users can view form sessions"
-ON public.form_sessions
-FOR SELECT
-TO authenticated
-USING (true);
-
--- Allow authenticated users to insert form sessions
-CREATE POLICY "Authenticated users can insert form sessions"
-ON public.form_sessions
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
--- Allow authenticated users to update form sessions
-CREATE POLICY "Authenticated users can update form sessions"
-ON public.form_sessions
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
--- Allow service role to access all form sessions
-CREATE POLICY "Service role can access all form sessions"
-ON public.form_sessions
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
--- Allow anonymous users to create form sessions
-CREATE POLICY "Anonymous users can create form sessions"
-ON public.form_sessions
-FOR INSERT
-TO anon
-WITH CHECK (true);
-
--- Allow anonymous users to view form sessions
-CREATE POLICY "Anonymous users can view form sessions"
-ON public.form_sessions
-FOR SELECT
-TO anon
-USING (true);
-
--- Allow anonymous users to update form sessions
-CREATE POLICY "Anonymous users can update form sessions"
-ON public.form_sessions
-FOR UPDATE
-TO anon
-USING (true)
-WITH CHECK (true);
-
--- Create a function for upserting form sessions
+-- Update the upsert function to handle environment properly
 CREATE OR REPLACE FUNCTION public.upsert_form_session(
   p_session_id text,
   p_form_data jsonb
@@ -122,7 +18,6 @@ BEGIN
   -- Insert or update the form session
   INSERT INTO public.form_sessions (
     session_id,
-    environment,
     environment,
     form_filler_type,
     current_grade,
@@ -149,7 +44,6 @@ BEGIN
   VALUES (
     p_session_id,
     p_form_data->>'environment',
-    p_form_data->>'environment',
     p_form_data->>'form_filler_type',
     p_form_data->>'current_grade',
     p_form_data->>'phone_number',
@@ -174,7 +68,6 @@ BEGIN
   )
   ON CONFLICT (session_id)
   DO UPDATE SET
-    environment = COALESCE(EXCLUDED.environment, form_sessions.environment),
     environment = COALESCE(EXCLUDED.environment, form_sessions.environment),
     form_filler_type = COALESCE(EXCLUDED.form_filler_type, form_sessions.form_filler_type),
     current_grade = COALESCE(EXCLUDED.current_grade, form_sessions.current_grade),
