@@ -122,6 +122,7 @@ BEGIN
   -- Insert or update the form session
   INSERT INTO public.form_sessions (
     session_id,
+    environment,
     form_filler_type,
     current_grade,
     phone_number,
@@ -146,6 +147,7 @@ BEGIN
   )
   VALUES (
     p_session_id,
+    p_form_data->>'environment',
     p_form_data->>'form_filler_type',
     p_form_data->>'current_grade',
     p_form_data->>'phone_number',
@@ -170,6 +172,7 @@ BEGIN
   )
   ON CONFLICT (session_id)
   DO UPDATE SET
+    environment = COALESCE(EXCLUDED.environment, form_sessions.environment),
     form_filler_type = COALESCE(EXCLUDED.form_filler_type, form_sessions.form_filler_type),
     current_grade = COALESCE(EXCLUDED.current_grade, form_sessions.current_grade),
     phone_number = COALESCE(EXCLUDED.phone_number, form_sessions.phone_number),
