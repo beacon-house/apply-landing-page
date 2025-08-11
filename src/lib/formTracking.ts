@@ -30,6 +30,14 @@ export const saveFormDataIncremental = async (
   formData: any
 ): Promise<void> => {
   try {
+    // DEBUG: Log environment variable
+    const envValue = import.meta.env.VITE_ENVIRONMENT?.trim();
+    debugLog('🔍 DEBUG - Environment variable:', {
+      raw: import.meta.env.VITE_ENVIRONMENT,
+      trimmed: envValue,
+      type: typeof import.meta.env.VITE_ENVIRONMENT
+    });
+    
     // Determine if counseling is booked
     const isCounsellingBooked = Boolean(formData.selectedDate && formData.selectedSlot);
     
@@ -39,7 +47,7 @@ export const saveFormDataIncremental = async (
     // Prepare form data with consistent snake_case field names matching database schema
     const dbFormData = {
       session_id: sessionId,
-      environment: import.meta.env.VITE_ENVIRONMENT?.trim(),
+      environment: envValue,
       
       // Page 1: Student Information - using snake_case
       form_filler_type: formData.formFillerType,

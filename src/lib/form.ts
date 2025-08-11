@@ -42,6 +42,14 @@ export const submitFormData = async (
     throw new Error('Form submission URL not configured. Please check environment variables.');
   }
   
+  // DEBUG: Log environment variable
+  const envValue = import.meta.env.VITE_ENVIRONMENT?.trim();
+  debugLog('🔍 DEBUG - Webhook environment variable:', {
+    raw: import.meta.env.VITE_ENVIRONMENT,
+    trimmed: envValue,
+    type: typeof import.meta.env.VITE_ENVIRONMENT
+  });
+  
   // Get the most current triggered events from the form store
   let currentTriggeredEvents: string[] = [];
   try {
@@ -88,7 +96,7 @@ export const submitFormData = async (
   const webhookPayload: Record<string, any> = {
     // Core session data
     session_id: data.sessionId || crypto.randomUUID(),
-    environment: import.meta.env.VITE_ENVIRONMENT?.trim(),
+    environment: envValue,
     
     // Page 1: Student Information (snake_case)
     form_filler_type: data.formFillerType,

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Environment Variables</title>
+</head>
+<body>
+    <h1>Environment Variable Debug</h1>
+    <div id="debug-info"></div>
+    
+    <script type="module">
+        // Debug script to check environment variables
+        const debugInfo = document.getElementById('debug-info');
+        
+        debugInfo.innerHTML = `
+            <h2>Environment Variables:</h2>
+            <p><strong>VITE_ENVIRONMENT:</strong> "${import.meta.env.VITE_ENVIRONMENT}"</p>
+            <p><strong>VITE_ENVIRONMENT type:</strong> ${typeof import.meta.env.VITE_ENVIRONMENT}</p>
+            <p><strong>VITE_ENVIRONMENT trimmed:</strong> "${import.meta.env.VITE_ENVIRONMENT?.trim()}"</p>
+            <p><strong>All VITE_ variables:</strong></p>
+            <pre>${JSON.stringify(
+                Object.entries(import.meta.env)
+                    .filter(([key]) => key.startsWith('VITE_'))
+                    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
+                null, 
+                2
+            )}</pre>
+        `;
+    </script>
+</body>
+</html>
