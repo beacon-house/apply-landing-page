@@ -126,38 +126,38 @@ export const fireLeadClassificationEvents = (formData: Partial<CompleteFormData>
 
   if (isParent) {
     // Parent events
-    trackMetaPixelEvent('adm_prnt_event', formData);
-    firedEvents.push('adm_prnt_event');
+    trackMetaPixelEvent('apply_prnt_event', formData);
+    firedEvents.push('apply_prnt_event');
 
     if (isSpam) {
-      trackMetaPixelEvent('adm_spam_prnt', formData);
-      firedEvents.push('adm_spam_prnt');
+      trackMetaPixelEvent('apply_spam_prnt', formData);
+      firedEvents.push('apply_spam_prnt');
     } else if (isQualified) {
-      trackMetaPixelEvent('adm_qualfd_prnt', formData);
-      firedEvents.push('adm_qualfd_prnt');
+      trackMetaPixelEvent('apply_qualfd_prnt', formData);
+      firedEvents.push('apply_qualfd_prnt');
     } else {
-      trackMetaPixelEvent('adm_disqualfd_prnt', formData);
-      firedEvents.push('adm_disqualfd_prnt');
+      trackMetaPixelEvent('apply_disqualfd_prnt', formData);
+      firedEvents.push('apply_disqualfd_prnt');
     }
   } else if (isStudent) {
     // Student events
-    trackMetaPixelEvent('adm_stdnt', formData);
-    firedEvents.push('adm_stdnt');
+    trackMetaPixelEvent('apply_stdnt', formData);
+    firedEvents.push('apply_stdnt');
 
     if (isSpam) {
-      trackMetaPixelEvent('adm_spam_stdnt', formData);
-      firedEvents.push('adm_spam_stdnt');
+      trackMetaPixelEvent('apply_spam_stdnt', formData);
+      firedEvents.push('apply_spam_stdnt');
     } else {
       // Simulate student qualification as parent
       const simulatedCategory = simulateStudentQualification(formData);
       const wouldBeQualified = ['bch', 'lum-l1', 'lum-l2'].includes(simulatedCategory);
       
       if (wouldBeQualified) {
-        trackMetaPixelEvent('adm_qualfd_stdnt', formData);
-        firedEvents.push('adm_qualfd_stdnt');
+        trackMetaPixelEvent('apply_qualfd_stdnt', formData);
+        firedEvents.push('apply_qualfd_stdnt');
       } else {
-        trackMetaPixelEvent('adm_disqualfd_stdnt', formData);
-        firedEvents.push('adm_disqualfd_stdnt');
+        trackMetaPixelEvent('apply_disqualfd_stdnt', formData);
+        firedEvents.push('apply_disqualfd_stdnt');
       }
     }
   }
@@ -167,38 +167,38 @@ export const fireLeadClassificationEvents = (formData: Partial<CompleteFormData>
 
 // GENERAL FUNNEL EVENTS (7 events)
 export const firePageViewEvent = (): string[] => {
-  trackMetaPixelEvent('adm_page_view');
-  return ['adm_page_view'];
+  trackMetaPixelEvent('apply_page_view');
+  return ['apply_page_view'];
 };
 
 export const fireHeroCTAEvent = (): string[] => {
-  trackMetaPixelEvent('adm_cta_hero');
-  return ['adm_cta_hero'];
+  trackMetaPixelEvent('apply_cta_hero');
+  return ['apply_cta_hero'];
 };
 
 export const fireHeaderCTAEvent = (): string[] => {
-  trackMetaPixelEvent('adm_cta_header');
-  return ['adm_cta_header'];
+  trackMetaPixelEvent('apply_cta_header');
+  return ['apply_cta_header'];
 };
 
 export const firePage1ContinueEvent = (formData: Partial<CompleteFormData>): string[] => {
-  trackMetaPixelEvent('adm_page_1_continue', formData);
-  return ['adm_page_1_continue'];
+  trackMetaPixelEvent('apply_page_1_continue', formData);
+  return ['apply_page_1_continue'];
 };
 
 export const firePage2ViewEvent = (formData: Partial<CompleteFormData>): string[] => {
-  trackMetaPixelEvent('adm_page_2_view', formData);
-  return ['adm_page_2_view'];
+  trackMetaPixelEvent('apply_page_2_view', formData);
+  return ['apply_page_2_view'];
 };
 
 export const firePage2SubmitEvent = (formData: Partial<CompleteFormData>): string[] => {
-  trackMetaPixelEvent('adm_page_2_submit', formData);
-  return ['adm_page_2_submit'];
+  trackMetaPixelEvent('apply_page_2_submit', formData);
+  return ['apply_page_2_submit'];
 };
 
 export const fireFormCompleteEvent = (formData: Partial<CompleteFormData>): string[] => {
-  trackMetaPixelEvent('adm_form_complete', formData);
-  return ['adm_form_complete'];
+  trackMetaPixelEvent('apply_form_complete', formData);
+  return ['apply_form_complete'];
 };
 
 // CATEGORY-SPECIFIC EVENTS (12 events total - 4 each for BCH, LUM-L1, LUM-L2)
@@ -211,7 +211,7 @@ export const fireCategorySpecificEvents = (
   
   if (['bch', 'lum-l1', 'lum-l2'].includes(leadCategory)) {
     const categoryPrefix = leadCategory.replace('-', '_'); // lum-l1 becomes lum_l1
-    const eventName = `adm_${categoryPrefix}_${eventType}`;
+    const eventName = `apply_${categoryPrefix}_${eventType}`;
     
     trackMetaPixelEvent(eventName, formData);
     firedEvents.push(eventName);
@@ -231,7 +231,7 @@ export const fireQualifiedLeadEvents = (
   const isStudent = formData.formFillerType === 'student';
   
   if (isParent && isQualified) {
-    const eventName = `adm_qualfd_prnt_${eventType}`;
+    const eventName = `apply_qualfd_prnt_${eventType}`;
     trackMetaPixelEvent(eventName, formData);
     firedEvents.push(eventName);
   } else if (isStudent) {
@@ -240,7 +240,7 @@ export const fireQualifiedLeadEvents = (
     const wouldBeQualified = ['bch', 'lum-l1', 'lum-l2'].includes(simulatedCategory);
     
     if (wouldBeQualified) {
-      const eventName = `adm_qualfd_stdnt_${eventType}`;
+      const eventName = `apply_qualfd_stdnt_${eventType}`;
       trackMetaPixelEvent(eventName, formData);
       firedEvents.push(eventName);
     }
