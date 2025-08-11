@@ -262,7 +262,6 @@ VITE_REGISTRATION_WEBHOOK_URL=<make.com-webhook-url>
 
 **Available Functions**:
 - `testDatabaseConnection()` - Verifies basic connectivity
-- `testUpsertFunction()` - Tests RPC function availability
 - `checkDatabaseHealth()` - Comprehensive health check
 
 ### Logging Strategy
@@ -285,4 +284,3 @@ VITE_REGISTRATION_WEBHOOK_URL=<make.com-webhook-url>
 | **Environment Variables** | Connection errors | Verify all `VITE_` prefixed variables |
 | **RLS Policy Conflicts** | Permission denied errors | Review and update RLS policies |
 | **Data Type Mismatches** | Validation failures | Check field mappings and types |
-| **Test Values in Production** | `funnel_stage: 'test'` appears | These are from `testUpsertFunction()` and are expected during testing |

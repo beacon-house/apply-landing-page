@@ -73,19 +73,10 @@ export default function FormContainer() {
     const testConnectivity = async () => {
       try {
         debugLog('🔍 Testing database connectivity...');
-        const { testDatabaseConnection, testUpsertFunction } = await import('@/lib/database');
+        const { testDatabaseConnection } = await import('@/lib/database');
         
         const isConnected = await testDatabaseConnection();
         debugLog('Database connection test:', isConnected ? '✅ Success' : '❌ Failed');
-        
-        if (isConnected) {
-          const upsertWorks = await testUpsertFunction();
-          debugLog('Upsert function test:', upsertWorks ? '✅ Success' : '❌ Failed');
-          
-          if (!upsertWorks) {
-            debugLog('⚠️ Upsert function not available, will use fallback direct operations');
-          }
-        }
       } catch (error) {
         errorLog('Database connectivity test error:', error);
       }
