@@ -38,8 +38,8 @@ New admissions landing page for Beacon House with simplified form structure, dat
 ### **Environment Variables (Staging)**
 
 \# Supabase Configuration  
-VITE\_SUPABASE\_URL=\[staging-project-url\]  
-VITE\_SUPABASE\_ANON\_KEY=\[staging-project-key\]
+VITE\_SUPABASE\_URL=\[staging-branch-url\]  
+VITE\_SUPABASE\_ANON\_KEY=\[staging-branch-key\]
 
 \# Other Environment Variables  
 VITE\_ENVIRONMENT=stg  
@@ -57,8 +57,8 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[staging-webhook-url\]
 ### **Environment Variables (Production)**
 
 \# Supabase Configuration  
-VITE\_SUPABASE\_URL=\[production-project-url\]  
-VITE\_SUPABASE\_ANON\_KEY=\[production-project-key\]
+VITE\_SUPABASE\_URL=\[main-branch-url\]  
+VITE\_SUPABASE\_ANON\_KEY=\[main-branch-key\]
 
 \# Other Environment Variables  
 VITE\_ENVIRONMENT=prod  
@@ -67,22 +67,33 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[production-webhook-url\]
 
 ## **Database \- Supabase**
 
-### **Current Setup - Staging**
+### **Current Setup - Supabase Branching Architecture**
 
 * **Organization:** new-admissions-landing-page
-* **Project:** apply-new-adms-lp-v2-staging
-* **Table:** form\_sessions  
+* **Main Project:** apply-new-adms-lp-v2-prod
+* **Branching Strategy:** 
+  - **Main Branch:** Connected to GitHub main branch (Production)
+  - **Staging Branch:** Connected to GitHub staging branch (Development/Testing)
+* **Table:** form\_sessions (consistent across all branches)
 
-### **Current Setup - Prod**
+### **Branch Configuration**
 
-* **Organization:** new-admissions-landing-page
-* **Project:** apply-new-adms-lp-v2-prod
-* **Table:** form\_sessions  
+**Staging Branch:**
+* **Connected to:** GitHub staging branch
+* **Environment:** Development/Testing
+* **Auto-deployment:** Staging branch changes auto-deploy to staging environment
 
+**Main Branch:**  
+* **Connected to:** GitHub main branch
+* **Environment:** Production
+* **Auto-deployment:** Main branch changes auto-deploy to production environment
 
-### **Single Organization Approach, Dual Projects Setup**
+### **Development Workflow**
 
-Both staging and production projects will be in the same Supabase organization but would be in two projects - one for staging and one for prod. 
+1. **Development Phase:** Make changes in Supabase staging branch
+2. **Testing Phase:** Test changes in staging environment 
+3. **Production Deployment:** Push/merge staging branch to main branch in Supabase
+4. **GitHub Sync:** Changes automatically sync with corresponding GitHub branches
 
 ## **Netlify Deployment Setup**
 
@@ -128,9 +139,10 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Supabase Database**
 
-* **Environment Separation:** Separate projects for staging vs production  
+* **Environment Separation:** Separate branches (staging vs main) within single project
 * **Schema:** Identical table structure across environments  
 * **Primary Storage:** Real-time application queries
+* **Branch Management:** Changes flow from staging branch → main branch
 
 ### **Google Spreadsheet Backup**
 
