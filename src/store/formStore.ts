@@ -52,7 +52,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   getLatestFormData: () => ({
     formData: get().formData,
     triggeredEvents: get().triggeredEvents
-  })
+  }),
   
   updateFormData: (data) => set((state) => ({
     formData: { ...state.formData, ...data }
