@@ -227,7 +227,7 @@ export default function LandingPage() {
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
-                    Do Research with US University faculty & Publish Your Work
+                    Do Research with US/UK University faculty & Publish Your Work
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
