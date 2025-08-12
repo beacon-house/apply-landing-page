@@ -1,11 +1,11 @@
 /**
- * FormContainer Component v8.0
+ * FormContainer Component v8.1
  * 
- * Purpose: Main orchestrator for the simplified 2-page form.
+ * Purpose: Main orchestrator for the 2-page form with Meta Pixel event tracking.
  * 
  * Changes made:
- * - Removed CAPI and Meta Pixel event tracking
- * - Simplified to core form functionality
+ * - Added comprehensive Meta Pixel event tracking
+ * - Integrated event firing throughout form flow
  */
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -18,6 +18,7 @@ import { useFormStore } from '@/store/formStore';
 import { trackFormView, trackFormStepComplete, trackFormAbandonment, trackFormError } from '@/lib/analytics';
 import { submitFormData, validateForm, FormValidationError } from '@/lib/form';
 import { determineLeadCategory } from '@/lib/leadCategorization';
+import { fireFormProgressionEvents, firePageViewEvent } from '@/lib/metaPixelEvents';
 import { toast } from '@/components/ui/toast';
 import { trackStep } from '@/lib/formTracking';
 import { 
@@ -32,15 +33,18 @@ import { debugLog, errorLog } from '@/lib/logger';
 export default function FormContainer() {
   const {
     currentStep,
-    formData,
+    formData, // This is a snapshot, use getLatestFormData() for latest
     isSubmitting,
     isSubmitted,
     startTime,
     sessionId,
+    triggeredEvents, // This is a snapshot, use getLatestFormData() for latest
     setStep,
     updateFormData,
     setSubmitting,
-    setSubmitted
+    setSubmitted,
+    addTriggeredEvents,
+    getLatestFormData // Import the new getter
   } = useFormStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,9 +60,13 @@ export default function FormContainer() {
   useEffect(() => {
     const trackFormStart = async () => {
       try {
+        // Use getLatestFormData to ensure we have the most current state for initial save
+        const { formData: latestFormData, triggeredEvents: latestTriggeredEvents } = getLatestFormData();
         await saveFormDataIncremental(sessionId, 1, 'form_start', {
+          ...latestFormData, // Include any existing form data
           sessionId,
-          startTime
+          startTime,
+          triggeredEvents: latestTriggeredEvents // Pass the latest events
         });
       } catch (error) {
         debugLog('Form start tracking error:', error);
@@ -66,7 +74,7 @@ export default function FormContainer() {
     };
     
     trackFormStart();
-  }, [sessionId, startTime]);
+  }, [sessionId, startTime, getLatestFormData]); // Add getLatestFormData to dependencies
   
   // Test database connectivity on mount
   useEffect(() => {
@@ -90,42 +98,9 @@ export default function FormContainer() {
       debugLog('📝 Page 1 submission started with data:', data);
       await validateForm(1, data);
       debugLog('✅ Page 1 validation passed');
+      
+      // Update form data in store first
       updateFormData(data);
-      
-      // Save data incrementally to database
-      const completeStep1Data = { 
-        ...formData, 
-        ...data, 
-        startTime,
-        sessionId
-      };
-      
-      // Track page 1 submission with incremental save
-      await trackPageCompletion(sessionId, 1, 'page1_submitted', completeStep1Data);
-      trackFormStepComplete(1);
-      
-      // If grade 7 or below, submit form immediately with DROP lead category
-      if (data.currentGrade === '7_below') {
-        setSubmitting(true);
-        const leadCategory = 'drop';
-        const finalData = { 
-          ...formData, 
-          ...data, 
-          lead_category: leadCategory, 
-          startTime
-        };
-        
-        updateFormData({ lead_category: leadCategory });
-        
-        // Track final submission for grade 7 below
-        await trackFormSubmission(sessionId, finalData, true);
-        
-        // Submit form with lead category
-        await submitFormData(finalData, 1, startTime, true);
-        setSubmitting(false);
-        setSubmitted(true);
-        return;
-      }
       
       // Determine lead category using new logic
       const leadCategory = determineLeadCategory(
@@ -143,31 +118,72 @@ export default function FormContainer() {
         undefined, // extendedNurtureData not used in new logic
         data.targetGeographies
       );
+      updateFormData({ lead_category: leadCategory }); // Update lead category in store
       
-      // Save lead category to state
-      setEvaluatedLeadCategory(leadCategory);
-      updateFormData({ lead_category: leadCategory });
-      
-      // Create final data object with the determined lead category
-      const finalData = { 
-        ...data, 
-        lead_category: leadCategory
-      };
-      
-      // If form is filled by student, submit immediately regardless of other conditions
-      if (data.formFillerType === 'student') {
+      // Get the absolute latest state from the store after all updates
+      const { formData: latestFormDataAfterUpdates, triggeredEvents: latestTriggeredEventsAfterUpdates } = getLatestFormData();
+
+      // If grade 7 or below, submit form immediately with DROP lead category
+      if (data.currentGrade === '7_below') {
         setSubmitting(true);
+        const finalData = { 
+          ...latestFormDataAfterUpdates, // Use latest form data
+          lead_category: 'drop', // Explicitly set drop category
+          startTime
+        };
         
-        // Track student direct submission
+        // Fire Meta Pixel events for form completion
+        const formCompleteEvents = fireFormProgressionEvents('form_complete', finalData);
+        addTriggeredEvents(formCompleteEvents); // Add events to store
+        
+        // Get the absolute latest triggered events after adding formCompleteEvents
+        const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
+
+        // Track final submission for grade 7 below
         await trackFormSubmission(sessionId, finalData, true);
         
-        await submitFormData(finalData, 1, startTime, true);
+        // Submit form with lead category and all accumulated events
+        await submitFormData(finalData, 1, startTime, true, finalTriggeredEventsForSubmission);
         setSubmitting(false);
         setSubmitted(true);
         return;
       }
       
-      // Check if lead is qualified for counseling (BCH, Luminaire L1, Luminaire L2)
+      // Fire Meta Pixel events for Page 1 completion
+      const page1Events = fireFormProgressionEvents('page_1_complete', latestFormDataAfterUpdates);
+      addTriggeredEvents(page1Events); // Add events to store
+      
+      // Get the absolute latest triggered events after adding page1Events
+      const { triggeredEvents: finalTriggeredEventsForPage1Save } = getLatestFormData();
+
+      // Track page 1 submission with incremental save, passing the latest state
+      await trackPageCompletion(sessionId, 1, 'page1_submitted', {
+        ...latestFormDataAfterUpdates, // Use latest form data
+        triggeredEvents: finalTriggeredEventsForPage1Save // Pass the latest events
+      });
+      trackFormStepComplete(1); // This tracks GA, not Meta Pixel
+      
+      // If form is filled by student, submit immediately regardless of other conditions
+      if (data.formFillerType === 'student') {
+        setSubmitting(true);
+        
+        // Fire Meta Pixel events for student direct submission
+        const studentCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
+        addTriggeredEvents(studentCompleteEvents);
+        
+        // Get the absolute latest triggered events after adding studentCompleteEvents
+        const { triggeredEvents: finalTriggeredEventsForStudentSubmission } = getLatestFormData();
+        
+        // Track student direct submission
+        await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
+        
+        await submitFormData(latestFormDataAfterUpdates, 1, startTime, true, finalTriggeredEventsForStudentSubmission);
+        setSubmitting(false);
+        setSubmitted(true);
+        return;
+      }
+      
+      // If qualified, show animation, else proceed to page 2
       const isQualified = ['bch', 'lum-l1', 'lum-l2'].includes(leadCategory);
       
       if (isQualified) {
@@ -182,6 +198,14 @@ export default function FormContainer() {
         // Disqualified leads go directly to Page 2B (contact info only)
         window.scrollTo(0, 0);
         setStep(2);
+        
+        // Fire Page 2 view events for disqualified leads
+        const page2ViewEvents = fireFormProgressionEvents('page_2_view', latestFormDataAfterUpdates);
+        addTriggeredEvents(page2ViewEvents); // Add events to store
+        
+        // No explicit incremental save here, as the useEffect below handles it
+        // for disqualified leads when currentStep becomes 2.
+        // The useEffect will use getLatestFormData() to get the most current state.
       }
       
     } catch (error) {
@@ -223,24 +247,31 @@ export default function FormContainer() {
 
   const onSubmitPage2A = async (data: QualifiedLeadData) => {
     try {
-      // CRITICAL: Update Zustand store FIRST with Page 2 data before any events are fired
+      // Update Zustand store FIRST with Page 2 data
       updateFormData(data);
       
-      await validateForm(2, { ...formData, ...data });
+      // Get the absolute latest state from the store after updates
+      const { formData: latestFormDataAfterUpdates, triggeredEvents: latestTriggeredEventsAfterUpdates } = getLatestFormData();
+      
+      // Fire Page 2 submit events
+      const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
+      addTriggeredEvents(page2SubmitEvents);
+      
+      // Fire form complete events
+      const formCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
+      addTriggeredEvents(formCompleteEvents);
+      
+      // Get the absolute latest triggered events after adding all events for this step
+      const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
+
+      await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
       
-      // Prepare final data for submission
-      const finalSubmissionData = {
-        ...formData,
-        ...data,
-        sessionId
-      };
-      
       // Track final submission to database
-      await trackFormSubmission(sessionId, finalSubmissionData, true);
+      await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
       
-      // Submit all form data including counselling details
-      await submitFormData(finalSubmissionData, 2, startTime, true);
+      // Submit all form data including counselling details and all accumulated events
+      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -254,24 +285,31 @@ export default function FormContainer() {
 
   const onSubmitPage2B = async (data: DisqualifiedLeadData) => {
     try {
-      // CRITICAL: Update Zustand store FIRST with Page 2 data before any events are fired
+      // Update Zustand store FIRST with Page 2 data
       updateFormData(data);
       
-      await validateForm(2, { ...formData, ...data });
+      // Get the absolute latest state from the store after updates
+      const { formData: latestFormDataAfterUpdates, triggeredEvents: latestTriggeredEventsAfterUpdates } = getLatestFormData();
+      
+      // Fire Page 2 submit events
+      const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
+      addTriggeredEvents(page2SubmitEvents);
+      
+      // Fire form complete events
+      const formCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
+      addTriggeredEvents(formCompleteEvents);
+      
+      // Get the absolute latest triggered events after adding all events for this step
+      const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
+
+      await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
       
-      // Prepare final data for submission
-      const finalSubmissionData = {
-        ...formData,
-        ...data,
-        sessionId
-      };
-      
       // Track final submission to database
-      await trackFormSubmission(sessionId, finalSubmissionData, true);
+      await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
       
-      // Submit all form data
-      await submitFormData(finalSubmissionData, 2, startTime, true);
+      // Submit all form data and all accumulated events
+      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -285,25 +323,34 @@ export default function FormContainer() {
 
   // Handle completion of evaluation animation
   const handleEvaluationComplete = () => {
-    // Track that lead has been evaluated
-    const trackLeadEvaluated = async () => {
+    setShowEvaluationAnimation(false);
+    setSubmitting(false);
+    setStep(2);
+    
+    // Get the absolute latest state from the store before firing page2ViewEvents
+    const { formData: latestFormDataBeforePage2View, triggeredEvents: latestTriggeredEventsBeforePage2View } = getLatestFormData();
+
+    // Fire Page 2 view events when moving to qualified lead form
+    const page2ViewEvents = fireFormProgressionEvents('page_2_view', latestFormDataBeforePage2View);
+    addTriggeredEvents(page2ViewEvents); // Add events to store
+    
+    // Get the absolute latest triggered events after adding page2ViewEvents
+    const { triggeredEvents: finalTriggeredEventsForPage2ViewSave } = getLatestFormData();
+
+    // Track that lead has been evaluated and save page 2 view data incrementally
+    const trackLeadEvaluatedAndSavePage2View = async () => {
       try {
         await saveFormDataIncremental(sessionId, 2, 'lead_evaluated', {
-          ...formData,
-          sessionId
+          ...latestFormDataBeforePage2View, // Use latest form data
+          triggeredEvents: finalTriggeredEventsForPage2ViewSave // Pass the latest events
         });
       } catch (error) {
         debugLog('Lead evaluated tracking error:', error);
       }
     };
+    trackLeadEvaluatedAndSavePage2View();
     
-    trackLeadEvaluated();
-    
-    setShowEvaluationAnimation(false);
-    setSubmitting(false);
-    setStep(2);
     trackFormStepComplete(1);
-    // Scroll to top when moving to next step
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -322,18 +369,20 @@ export default function FormContainer() {
 
   // Fire Page 2 view events when step 2 is reached
   useEffect(() => {
-    if (currentStep === 2 && formData.lead_category) {
-      // Save page 2 view data incrementally
-      const page2Data = { 
-        ...formData, 
-        sessionId
+    if (currentStep === 2 && formData.lead_category && !['bch', 'lum-l1', 'lum-l2'].includes(formData.lead_category)) {
+      // For disqualified leads, fire page 2 view events if not already fired
+      // This useEffect handles the case where a disqualified lead goes directly to page 2.
+      // We need to ensure the triggeredEvents are up-to-date for this incremental save.
+      const trackPage2ViewForDisqualified = async () => {
+        const { formData: latestFormData, triggeredEvents: latestTriggeredEvents } = getLatestFormData();
+        await saveFormDataIncremental(sessionId, 2, 'page2_view', {
+          ...latestFormData,
+          triggeredEvents: latestTriggeredEvents
+        });
       };
-      saveFormDataIncremental(sessionId, 2, 'page2_view', page2Data);
+      trackPage2ViewForDisqualified();
     }
-    
-    // Scroll to top when step changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentStep, formData.lead_category, sessionId]);
+  }, [currentStep, formData.lead_category, sessionId, getLatestFormData]);
 
   // Evaluation steps for regular evaluation animation
   const evaluationSteps = [

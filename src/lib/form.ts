@@ -35,24 +35,15 @@ export const submitFormData = async (
   step: number,
   startTime: number,
   isComplete: boolean = false,
-  triggeredEvents?: string[]
+  triggeredEvents: string[] = []
 ): Promise<Response> => {
   const webhookUrl = import.meta.env.VITE_REGISTRATION_WEBHOOK_URL?.trim();
   if (!webhookUrl) {
     throw new Error('Form submission URL not configured. Please check environment variables.');
   }
   
-  // Get the most current triggered events from the form store
-  let currentTriggeredEvents: string[] = [];
-  try {
-    const { useFormStore } = await import('@/store/formStore');
-    currentTriggeredEvents = useFormStore.getState().triggeredEvents;
-    debugLog('📊 Current triggered events from store:', currentTriggeredEvents);
-  } catch (error) {
-    debugLog('Could not access form store for triggered events:', error);
-    // Fallback to passed parameter if store is not available
-    currentTriggeredEvents = triggeredEvents || [];
-  }
+  // Use the provided triggered events array
+  debugLog('📊 Triggered events being sent:', triggeredEvents);
   
   // Validate and sanitize lead category before webhook submission
   const originalCategory = data.lead_category;
@@ -121,14 +112,14 @@ export const submitFormData = async (
     funnel_stage: funnelStage,
     is_qualified_lead: isQualifiedLead,
     page_completed: step,
-    triggered_events: currentTriggeredEvents,
+    triggered_events: triggeredEvents,
     
     // Timestamp
     created_at: new Date().toISOString()
   };
 
   debugLog('Sending webhook data:', webhookPayload);
-  debugLog('📊 Triggered events being sent:', currentTriggeredEvents);
+  debugLog('📊 Triggered events being sent:', triggeredEvents);
   
   const response = await fetch(webhookUrl, {
     method: 'POST',

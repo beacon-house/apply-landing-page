@@ -1,11 +1,11 @@
 /**
- * Landing Page Component v8.0
+ * Landing Page Component v8.1
  * 
- * Purpose: Main landing page with hero section and navigation.
+ * Purpose: Main landing page with Meta Pixel CTA tracking.
  * 
  * Changes made:
- * - Removed CAPI and Meta Pixel event tracking
- * - Simplified to basic navigation functionality
+ * - Added Meta Pixel CTA event tracking
+ * - Integrated with form store for event management
  */
 
 import React from 'react';
@@ -14,11 +14,18 @@ import { useSwipeable } from 'react-swipeable';
 import { Trophy, GraduationCap, Users, DollarSign, Award, BarChart3, BookOpen, Briefcase, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from './Header';
+import { useFormStore } from '@/store/formStore';
+import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { addTriggeredEvents } = useFormStore();
 
   const handleScrollToForm = () => {
+    // Fire Hero CTA event
+    const ctaEvents = fireCTAClickEvent('hero');
+    addTriggeredEvents(ctaEvents);
+    
     navigate('/application-form');
   };
 
@@ -43,7 +50,7 @@ export default function LandingPage() {
                   <span className="text-sm text-gray-600">Trustpilot Score: 4.6</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 font-sans leading-tight" style={{ fontDisplay: 'swap' }}>
-                  Eyeing the <span className="underline decoration-accent decoration-4">Ivy League</span>?<br />
+                  Eyeing the <span className="underline decoration-accent decoration-4">best universities worldwide</span>?<br />
                   We'll make it happen.
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
@@ -60,8 +67,8 @@ export default function LandingPage() {
                   <div className="text-center">
                     <Trophy className="w-10 h-10 text-accent mx-auto mb-2" />
                     <div className="space-y-1">
-                      <div className="text-2xl font-bold text-primary/90 font-sans">99%</div>
-                      <div className="text-xs text-gray-600">Acceptance Rate</div>
+                      <div className="text-2xl font-bold text-primary/90 font-sans">100+</div>
+                      <div className="text-xs text-gray-600">Admits to top 5 UK Universities</div>
                     </div>
                   </div>
                   <div className="text-center">
@@ -82,6 +89,7 @@ export default function LandingPage() {
                 <button 
                   onClick={handleScrollToForm}
                   className="hero-cta bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg"
+                  data-cta="hero"
                 >
                   Request an Evaluation
                 </button>
@@ -193,18 +201,18 @@ export default function LandingPage() {
                   <BookOpen className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Insider Expertise</h3>
-                <p className="text-gray-600 mb-6">Work directly with Former Admissions Officers who used to make admissions decisions at the top schools. Your application, guided by their insights.</p>
+                <p className="text-gray-600 mb-6 min-h-[96px]">Work directly with Former Admissions Officers who used to make admissions decisions at the top schools. Your application, guided by their insights.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
-                    150+ Former Admissions Officers from Ivy League
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
+                    150+ Former Admissions Officers from Ivy League and Top 5 UK Universities
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     Personalised Application Strategy
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
                     Benefit from Insider Insights & Experience
                   </li>
                 </ul>
@@ -215,18 +223,18 @@ export default function LandingPage() {
                   <Briefcase className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Exclusive Access</h3>
-                <p className="text-gray-600 mb-6">Secure opportunities that less than 1% of applicants can access. Build a profile that stands out globally.</p>
+                <p className="text-gray-600 mb-6 min-h-[96px]">Secure opportunities that less than 1% of applicants can access. Build a profile that stands out globally.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
-                    Do Research with US University faculty & Publish Your Work
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
+                    Do Research with US/UK University faculty & Publish Your Work
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     Silicon Valley Startup Internships
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
                     Ivy League Writing Programs
                   </li>
                 </ul>
@@ -237,18 +245,24 @@ export default function LandingPage() {
                   <BarChart3 className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Exceptional Outcomes</h3>
-                <p className="text-gray-600 mb-6">Join a select group where extraordinary success is the norm, not the exception.</p>
+                <div className="min-h-[96px] mb-6">
+                  <p className="text-gray-600">Join a select group where extraordinary success is the norm, not the exception.</p>
+                </div>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
                     97% Top-30 University Rate
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     620+ Ivy League Acceptances
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
+                    100+ Admits to top 5 UK Universities
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-300" />
                     ₹33+ Crore in Scholarships
                   </li>
                 </ul>
