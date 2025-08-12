@@ -201,7 +201,7 @@ export default function LandingPage() {
                   <BookOpen className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Insider Expertise</h3>
-                <p className="text-gray-600 mb-6">Work directly with Former Admissions Officers who used to make admissions decisions at the top schools. Your application, guided by their insights.</p>
+                <p className="text-gray-600 mb-6 min-h-[96px]">Work directly with Former Admissions Officers who used to make admissions decisions at the top schools. Your application, guided by their insights.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
@@ -223,7 +223,7 @@ export default function LandingPage() {
                   <Briefcase className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Exclusive Access</h3>
-                <p className="text-gray-600 mb-6">Secure opportunities that less than 1% of applicants can access. Build a profile that stands out globally.</p>
+                <p className="text-gray-600 mb-6 min-h-[96px]">Secure opportunities that less than 1% of applicants can access. Build a profile that stands out globally.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
@@ -245,7 +245,9 @@ export default function LandingPage() {
                   <BarChart3 className="w-8 h-8 text-[#FFB800]" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0a2342] mb-4">Exceptional Outcomes</h3>
-                <p className="text-gray-600 mb-6">Join a select group where extraordinary success is the norm, not the exception.</p>
+                <div className="min-h-[96px] mb-6">
+                  <p className="text-gray-600">Join a select group where extraordinary success is the norm, not the exception.</p>
+                </div>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
@@ -257,6 +259,10 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    100+ Admits to top 5 UK Universities
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-300" />
                     ₹33+ Crore in Scholarships
                   </li>
                 </ul>
