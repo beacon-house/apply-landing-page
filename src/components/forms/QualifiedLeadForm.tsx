@@ -54,7 +54,7 @@ interface TimeSlot {
 }
 
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
-  const { sessionId } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents } = useFormStore();
 
   // Determine which counselor to show based on lead category
   const isBCH = leadCategory === 'bch';
@@ -191,7 +191,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   // Track form sections as user completes them
   const trackSectionCompletion = async (sectionName: string, sectionData: any) => {
     try {
-      await trackFormSection(sessionId, sectionName, sectionData, 2);
+      // Create a comprehensive snapshot of the form data including all current triggeredEvents
+      const snapshotFormData = { ...storeFormData, ...sectionData, triggeredEvents };
+      await trackFormSection(sessionId, sectionName, 2, snapshotFormData);
     } catch (error) {
       console.error('Section tracking error:', error);
     }

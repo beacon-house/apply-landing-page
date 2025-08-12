@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { initializeAnalytics } from './lib/analytics';
+import { initializeAnalytics } from '@/lib/analytics';
+import { initializeMetaPixel } from '@/lib/metaPixelEvents';
 import LandingPage from './components/LandingPage';
 import FormPage from './components/FormPage';
 import NotFound from './components/NotFound';
@@ -15,6 +16,9 @@ function App() {
   React.useEffect(() => {
     // Initialize Google Analytics
     initializeAnalytics();
+    
+    // Initialize Meta Pixel
+    initializeMetaPixel();
   }, []);
 
   return (

@@ -15,7 +15,7 @@ New admissions landing page for Beacon House with simplified form structure, dat
 
 ### **GitHub Repository**
 
-* **Repository:** https://github.com/beacon-house/apply-landing-page
+* **Repository:** [https://github.com/beacon-house/apply-landing-page](https://github.com/beacon-house/apply-landing-page)  
 * **Main Branch:** main \- Production-ready code  
 * **Staging Branch:** staging \- Development/testing branch
 
@@ -32,14 +32,14 @@ New admissions landing page for Beacon House with simplified form structure, dat
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Domain:** https://staging-v2-apply-bch-in.netlify.app/
+* **Domain:** [https://staging-v2-apply-bch-in.netlify.app/](https://staging-v2-apply-bch-in.netlify.app/)  
 * **Purpose:** Testing and validation
 
 ### **Environment Variables (Staging)**
 
 \# Supabase Configuration  
-VITE\_SUPABASE\_URL=\[staging-project-url\]  
-VITE\_SUPABASE\_ANON\_KEY=\[staging-project-key\]
+VITE\_SUPABASE\_URL=\[staging-branch-url\]  
+VITE\_SUPABASE\_ANON\_KEY=\[staging-branch-key\]
 
 \# Other Environment Variables  
 VITE\_ENVIRONMENT=stg  
@@ -57,8 +57,8 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[staging-webhook-url\]
 ### **Environment Variables (Production)**
 
 \# Supabase Configuration  
-VITE\_SUPABASE\_URL=\[production-project-url\]  
-VITE\_SUPABASE\_ANON\_KEY=\[production-project-key\]
+VITE\_SUPABASE\_URL=\[main-branch-url\]  
+VITE\_SUPABASE\_ANON\_KEY=\[main-branch-key\]
 
 \# Other Environment Variables  
 VITE\_ENVIRONMENT=prod  
@@ -67,29 +67,42 @@ VITE\_REGISTRATION\_WEBHOOK\_URL=\[production-webhook-url\]
 
 ## **Database \- Supabase**
 
-### **Current Setup - Staging**
+### **Current Setup \- Supabase Branching Architecture**
 
-* **Organization:** new-admissions-landing-page
-* **Project:** apply-new-adms-lp-v2-staging
-* **Table:** form\_sessions  
+* **Organization:** beacon-house-pro-projects  
+* **Main Project:** apply-new-adms-lp-v2  
+* **Branching Strategy:**  
+  - **Main Branch:** Connected to GitHub main branch (Production)  
+  - **Staging Branch:** Connected to GitHub staging branch (Development/Testing)  
+* **Table:** form\_sessions (consistent across all branches)
 
-### **Current Setup - Prod**
+### **Branch Configuration**
 
-* **Organization:** new-admissions-landing-page
-* **Project:** apply-new-adms-lp-v2-prod
-* **Table:** form\_sessions  
+**Staging Branch:**
 
+* **Connected to:** GitHub staging branch  
+* **Environment:** Development/Testing  
+* **Auto-deployment:** Staging branch changes auto-deploy to staging environment
 
-### **Single Organization Approach, Dual Projects Setup**
+**Main Branch:**
 
-Both staging and production projects will be in the same Supabase organization but would be in two projects - one for staging and one for prod. 
+* **Connected to:** GitHub main branch  
+* **Environment:** Production  
+* **Auto-deployment:** Main branch changes auto-deploy to production environment
+
+### **Development Workflow**
+
+1. **Development Phase:** Make changes in Supabase staging branch  
+2. **Testing Phase:** Test changes in staging environment  
+3. **Production Deployment:** Push/merge staging branch to main branch in Supabase  
+4. **GitHub Sync:** Changes automatically sync with corresponding GitHub branches
 
 ## **Netlify Deployment Setup**
 
 ### **Staging Site**
 
 * **Branch:** staging  
-* **Netlify Site:** https://staging-v2-apply-bch-in.netlify.app/
+* **Netlify Site:** [https://staging-v2-apply-bch-in.netlify.app/](https://staging-v2-apply-bch-in.netlify.app/)  
 * **GitHub Integration:** Staging branch auto-deploys to this site  
 * **Environment Variables:** Uses staging environment variables (stg)
 
@@ -102,7 +115,7 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Deployment Flow**
 
-* **Staging:** Push to staging branch → Auto-deploy to staging-v3-admissions-bch.netlify.app  
+* **Staging:** Push to staging branch → Auto-deploy to staging-v2-admissions-bch.netlify.app  
 * **Production:** Push/merge to main branch → Auto-deploy to apply.beaconhouse.in
 
 ## **Lead Collection Flow**
@@ -118,7 +131,7 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Staging Data Flow**
 
-**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.stg-apply-bch page v2") → **Google Sheet** (apply-beaconhouse.in leads > staging-v2 tab) \+ **Email** (nkgoutham@gmail.com) \+ **Calendar Invite**
+**Form Submission** → **Supabase DB Save** \+ **Webhook** → **Make.com Scenario** ("04.stg-apply-bch page v2") → **Google Sheet** (apply-beaconhouse.in leads \> staging-v2 tab) \+ **Email** ([nkgoutham@gmail.com](mailto:nkgoutham@gmail.com)) \+ **Calendar Invite**
 
 ### **Production Data Flow**
 
@@ -128,17 +141,17 @@ Both staging and production projects will be in the same Supabase organization b
 
 ### **Supabase Database**
 
-* **Environment Separation:** Separate projects for staging vs production  
+* **Environment Separation:** Separate branches (staging vs main) within single project  
 * **Schema:** Identical table structure across environments  
-* **Primary Storage:** Real-time application queries
+* **Primary Storage:** Real-time application queries  
+* **Branch Management:** Changes flow from staging branch → main branch
 
-### **Google Spreadsheet Backup**
+### **Google Spreadsheet** 
 
 * **Spreadsheet:** "apply-beaconhouse.in leads"  
 * **Staging Tab:** staging-v2  
 * **Production Tab:** prod-v2  
 * **Purpose:** Actual leads repository and manual analysis
-
 
 ## **Lead Categorization Logic**
 
@@ -186,7 +199,7 @@ Both staging and production projects will be in the same Supabase organization b
 ### **Deployment**
 
 * **Hosting:** Netlify  
-* **Domain Management:** apply.beaconhouse.in (production), staging-v3-admissions-bch.netlify.app (staging)  
+* **Domain Management:** apply.beaconhouse.in (production), https://staging-v2-apply-bch-in.netlify.app/ (staging)  
 * **SSL:** Automatic via Netlify  
 * **Environment Management:** Branch-based deployment with environment variables
 
@@ -203,20 +216,30 @@ Both staging and production projects will be in the same Supabase organization b
 * **New Landing Page:** apply.beaconhouse.in (live production site)  
 * **Strategy:** Both landing pages running simultaneously
 
-
 ## **Security & Best Practices**
 
 ### **Secret Management**
 
-* **No Hardcoded Values:** All sensitive data stored in Supabase Edge Function secrets
+* **No Hardcoded Values:** All sensitive data stored in Supabase Edge Function secrets  
 * **Automatic Injection:** Secrets injected at runtime by Supabase platform
 
 ### **CORS Configuration**
 
-* **Permissive CORS:** Allows all origins for development flexibility
+* **Permissive CORS:** Allows all origins for development flexibility  
 * **Production Consideration:** Could be tightened to specific domains for enhanced security
 
 ### **Data Privacy**
 
-* **Minimal Data Transfer:** Only necessary form fields included in payloads
+* **Minimal Data Transfer:** Only necessary form fields included in payloads  
 * **Compliance:** Structure supports GDPR/privacy compliance requirements
+
+## **Troubleshooting Guide**
+
+### **Common Issues**
+
+| Issue | Symptoms | Solution |
+| :---- | :---- | :---- |
+| **RPC Function Missing** | Fallback saves only | Deploy `upsert_form_session` to current Supabase branch |
+| **Environment Variables** | Connection errors | Verify all `VITE_` prefixed variables match current branch |
+| **Branch Mismatch** | Wrong data/environment | Ensure correct Supabase branch is selected |
+| **RLS Policy Conflicts** | Permission denied errors | Review and update RLS policies on current branch |

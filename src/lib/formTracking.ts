@@ -73,6 +73,7 @@ export const saveFormDataIncremental = async (
       is_qualified_lead: isQualifiedLead,
       page_completed: pageNumber,
       triggered_events: [],
+      triggered_events: formData.triggeredEvents || [],
       
       created_at: new Date().toISOString()
     };
@@ -125,8 +126,8 @@ export const saveFormDataIncremental = async (
 export const trackFormSection = async (
   sessionId: string,
   sectionName: string,
-  sectionData: any,
-  currentPage: number
+  currentPage: number,
+  fullFormData: any
 ): Promise<void> => {
   try {
     debugLog(`📝 Tracking form section: ${sectionName} for session ${sessionId}`);
@@ -152,7 +153,7 @@ export const trackFormSection = async (
       sessionId,
       currentPage,
       funnelStage,
-      sectionData
+      fullFormData
     );
     
   } catch (error) {

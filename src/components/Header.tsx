@@ -12,6 +12,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFormStore } from '@/store/formStore';
+import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
 
 interface HeaderProps {
   showCTA?: boolean;
@@ -19,11 +21,16 @@ interface HeaderProps {
 
 export function Header({ showCTA = true }: HeaderProps) {
   const navigate = useNavigate();
+  const { addTriggeredEvents } = useFormStore();
   const [showMobileStickyCTA, setShowMobileStickyCTA] = useState(false);
   const [showHeaderCTA, setShowHeaderCTA] = useState(false);
   const [hasScrolledPastHero, setHasScrolledPastHero] = useState(false);
 
   const handleCTAClick = () => {
+    // Fire Header CTA event
+    const ctaEvents = fireCTAClickEvent('header');
+    addTriggeredEvents(ctaEvents);
+    
     navigate('/application-form');
   };
 

@@ -1,11 +1,11 @@
 /**
- * Landing Page Component v8.0
+ * Landing Page Component v8.1
  * 
- * Purpose: Main landing page with hero section and navigation.
+ * Purpose: Main landing page with Meta Pixel CTA tracking.
  * 
  * Changes made:
- * - Removed CAPI and Meta Pixel event tracking
- * - Simplified to basic navigation functionality
+ * - Added Meta Pixel CTA event tracking
+ * - Integrated with form store for event management
  */
 
 import React from 'react';
@@ -14,11 +14,18 @@ import { useSwipeable } from 'react-swipeable';
 import { Trophy, GraduationCap, Users, DollarSign, Award, BarChart3, BookOpen, Briefcase, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from './Header';
+import { useFormStore } from '@/store/formStore';
+import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { addTriggeredEvents } = useFormStore();
 
   const handleScrollToForm = () => {
+    // Fire Hero CTA event
+    const ctaEvents = fireCTAClickEvent('hero');
+    addTriggeredEvents(ctaEvents);
+    
     navigate('/application-form');
   };
 
@@ -82,6 +89,7 @@ export default function LandingPage() {
                 <button 
                   onClick={handleScrollToForm}
                   className="hero-cta bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg"
+                  data-cta="hero"
                 >
                   Request an Evaluation
                 </button>
