@@ -50,7 +50,7 @@ export default function LandingPage() {
                   <span className="text-sm text-gray-600">Trustpilot Score: 4.6</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 font-sans leading-tight" style={{ fontDisplay: 'swap' }}>
-                  Eyeing the <span className="underline decoration-accent decoration-4">Ivy League</span>?<br />
+                  Eyeing the <span className="underline decoration-accent decoration-4">best universities worldwide</span>?<br />
                   We'll make it happen.
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
@@ -67,8 +67,8 @@ export default function LandingPage() {
                   <div className="text-center">
                     <Trophy className="w-10 h-10 text-accent mx-auto mb-2" />
                     <div className="space-y-1">
-                      <div className="text-2xl font-bold text-primary/90 font-sans">99%</div>
-                      <div className="text-xs text-gray-600">Acceptance Rate</div>
+                      <div className="text-2xl font-bold text-primary/90 font-sans">100+</div>
+                      <div className="text-xs text-gray-600">Admits to top 5 UK Universities</div>
                     </div>
                   </div>
                   <div className="text-center">
