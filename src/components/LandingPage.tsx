@@ -205,7 +205,7 @@ export default function LandingPage() {
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
-                    150+ Former Admissions Officers from Ivy League
+                    150+ Former Admissions Officers from Ivy League and Top 5 UK Univs
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
