@@ -204,15 +204,15 @@ export default function LandingPage() {
                 <p className="text-gray-600 mb-6 min-h-[96px]">Work directly with Former Admissions Officers who used to make admissions decisions at the top schools. Your application, guided by their insights.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
                     150+ Former Admissions Officers from Ivy League and Top 5 UK Universities
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     Personalised Application Strategy
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
                     Benefit from Insider Insights & Experience
                   </li>
                 </ul>
@@ -226,15 +226,15 @@ export default function LandingPage() {
                 <p className="text-gray-600 mb-6 min-h-[96px]">Secure opportunities that less than 1% of applicants can access. Build a profile that stands out globally.</p>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
                     Do Research with US/UK University faculty & Publish Your Work
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     Silicon Valley Startup Internships
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
                     Ivy League Writing Programs
                   </li>
                 </ul>
@@ -250,19 +250,19 @@ export default function LandingPage() {
                 </div>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn" />
                     97% Top-30 University Rate
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-100" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-100" />
                     620+ Ivy League Acceptances
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-200" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-200" />
                     100+ Admits to top 5 UK Universities
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-[#FFB800] mr-2 animate-fadeIn delay-300" />
+                    <CheckCircle className="w-5 h-5 md:w-5 md:h-5 text-[#FFB800] mr-2 flex-shrink-0 animate-fadeIn delay-300" />
                     ₹33+ Crore in Scholarships
                   </li>
                 </ul>
