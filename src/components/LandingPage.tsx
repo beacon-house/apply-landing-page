@@ -50,8 +50,7 @@ export default function LandingPage() {
                   <span className="text-sm text-gray-600">Trustpilot Score: 4.6</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 font-sans leading-tight" style={{ fontDisplay: 'swap' }}>
-                  Eyeing the <span className="underline decoration-accent decoration-4">best universities worldwide</span>?<br />
-                  We'll make it happen.
+                  From the <span className="underline decoration-accent decoration-4">Ivy League</span> to <span className="underline decoration-accent decoration-4">Oxford & Cambridge</span> - We'll Get You There
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
                   We partner with exceptional Indian students, helping them achieve 7X higher acceptance rates at elite universities.
