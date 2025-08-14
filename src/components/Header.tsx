@@ -91,7 +91,7 @@ export function Header({ showCTA = true }: HeaderProps) {
           {/* Logo */}
           <div className="flex items-center">
             <img 
-              src="/bh ig logo.png" 
+              src="/bh-ig-logo.png" 
               alt="Beacon House" 
                 className="h-8 w-auto sm:h-10 md:h-12"
             />
