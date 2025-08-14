@@ -147,7 +147,7 @@ export function Header({ showCTA = true }: HeaderProps) {
              onClick={handleCTAClick}
                 className="hidden sm:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
               className={`hidden sm:${showHeaderCTA ? 'block' : 'hidden'} bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base`}
-            >
+              Request an Evaluation
               Request an Evaluation
             </button>
           )}
