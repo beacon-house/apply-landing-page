@@ -148,7 +148,7 @@ export function Header({ showCTA = true }: HeaderProps) {
                 className="hidden sm:block bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base"
               className={`hidden sm:${showHeaderCTA ? 'block' : 'hidden'} bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base`}
             >
-              Check My Admission Odds
+              Request an Evaluation
             </button>
           )}
         </div>
@@ -163,7 +163,7 @@ export function Header({ showCTA = true }: HeaderProps) {
               onClick={handleCTAClick}
               className="w-full bg-accent text-primary py-3 rounded-lg font-bold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-base"
             >
-              Check My Admission Odds
+              Request an Evaluation
             </button>
           </div>
         </div>

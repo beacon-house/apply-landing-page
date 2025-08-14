@@ -91,7 +91,7 @@ export default function LandingPage() {
                   className="hero-cta bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg"
                   data-cta="hero"
                 >
-                  Check My Admission Odds
+                  Request an Evaluation
                 </button>
               </div>
               <div className="relative animate-fade-in hidden md:block">
@@ -357,7 +357,7 @@ export default function LandingPage() {
               className="bg-accent text-primary px-8 py-4 rounded-lg text-xl font-semibold hover:bg-accent-light transition-all duration-300 shadow-xl hover:shadow-2xl"
               data-cta="footer"
             >
-              Check My Admission Odds
+              Request an Evaluation
             </button>
           </div>
         </section>
