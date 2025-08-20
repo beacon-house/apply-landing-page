@@ -1,20 +1,27 @@
--- Update the existing table to remove the 'staging' default
-ALTER TABLE public.form_sessions 
-ALTER COLUMN environment DROP DEFAULT;
-| `utmParameters.utm_source` | `utm_source` | text | UTM Source parameter |
-| `utmParameters.utm_medium` | `utm_medium` | text | UTM Medium parameter |
-| `utmParameters.utm_campaign` | `utm_campaign` | text | UTM Campaign parameter |
-| `utmParameters.utm_term` | `utm_term` | text | UTM Term parameter |
-| `utmParameters.utm_content` | `utm_content` | text | UTM Content parameter |
-| `utmParameters.utm_id` | `utm_id` | text | UTM ID parameter |
-| `utm_source` | text | UTM Source (campaign source) | null |
-| `utm_medium` | text | UTM Medium (campaign medium) | null |
-| `utm_campaign` | text | UTM Campaign (campaign name) | null |
-| `utm_term` | text | UTM Term (search keywords) | null |
-| `utm_content` | text | UTM Content (content variation) | null |
-| `utm_id` | text | UTM ID (unique campaign identifier) | null |
+/*
+  # Update upsert_form_session function to handle UTM parameters
 
--- Update the upsert function to handle environment properly
+  1. Function Updates
+     - Added UTM columns to INSERT statement
+     - Added UTM columns to UPDATE statement (ON CONFLICT)
+     - UTM parameters are extracted from p_form_data JSONB parameter
+     - Uses COALESCE to preserve existing UTM data on updates
+
+  2. UTM Columns Added
+     - utm_source: Marketing source (Google, Facebook, Email, etc.)
+     - utm_medium: Marketing medium (CPC, Email, Social, etc.)
+     - utm_campaign: Campaign name for tracking specific campaigns
+     - utm_term: Keywords for paid search campaigns
+     - utm_content: Content variation for A/B testing
+     - utm_id: Unique campaign identifier
+
+  3. Data Handling
+     - UTM parameters are stored as-is from the frontend
+     - NULL values are allowed for optional UTM parameters
+     - Existing UTM data is preserved unless explicitly updated
+     - Function maintains backward compatibility with existing calls
+*/
+
 CREATE OR REPLACE FUNCTION public.upsert_form_session(
   p_session_id text,
   p_form_data jsonb
@@ -51,7 +58,14 @@ BEGIN
     is_qualified_lead,
     page_completed,
     triggered_events,
-    student_name
+    student_name,
+    -- UTM Parameters
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    utm_term,
+    utm_content,
+    utm_id
   )
   VALUES (
     p_session_id,
@@ -76,7 +90,14 @@ BEGIN
     COALESCE((p_form_data->>'is_qualified_lead')::boolean, false),
     COALESCE((p_form_data->>'page_completed')::integer, 1),
     COALESCE(p_form_data->'triggered_events', '[]'::jsonb),
-    p_form_data->>'student_name'
+    p_form_data->>'student_name',
+    -- UTM Parameters
+    p_form_data->>'utm_source',
+    p_form_data->>'utm_medium',
+    p_form_data->>'utm_campaign',
+    p_form_data->>'utm_term',
+    p_form_data->>'utm_content',
+    p_form_data->>'utm_id'
   )
   ON CONFLICT (session_id)
   DO UPDATE SET
@@ -102,6 +123,13 @@ BEGIN
     page_completed = COALESCE(EXCLUDED.page_completed, form_sessions.page_completed),
     triggered_events = COALESCE(EXCLUDED.triggered_events, form_sessions.triggered_events),
     student_name = COALESCE(EXCLUDED.student_name, form_sessions.student_name),
+    -- UTM Parameter Updates
+    utm_source = COALESCE(EXCLUDED.utm_source, form_sessions.utm_source),
+    utm_medium = COALESCE(EXCLUDED.utm_medium, form_sessions.utm_medium),
+    utm_campaign = COALESCE(EXCLUDED.utm_campaign, form_sessions.utm_campaign),
+    utm_term = COALESCE(EXCLUDED.utm_term, form_sessions.utm_term),
+    utm_content = COALESCE(EXCLUDED.utm_content, form_sessions.utm_content),
+    utm_id = COALESCE(EXCLUDED.utm_id, form_sessions.utm_id),
     updated_at = now()
   RETURNING id INTO v_id;
   

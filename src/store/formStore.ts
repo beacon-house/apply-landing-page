@@ -10,7 +10,7 @@
  */
 
 import { create } from 'zustand';
-import { CompleteFormData } from '@/types/form';
+import { CompleteFormData, UtmParameters } from '@/types/form';
 import { validateFormStep } from '@/lib/form';
 import { generateSessionId } from '@/lib/formTracking';
 import { debugLog } from '@/lib/logger';
@@ -23,15 +23,17 @@ interface FormState {
   startTime: number;
   sessionId: string;
   triggeredEvents: string[];
+  utmParameters: UtmParameters;
   setStep: (step: number) => void;
   updateFormData: (data: Partial<CompleteFormData>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setSubmitted: (isSubmitted: boolean) => void;
   addTriggeredEvents: (events: string[]) => void;
   clearTriggeredEvents: () => void;
+  setUtmParameters: (utm: UtmParameters) => void;
   resetForm: () => void;
   canProceed: (step: number) => boolean;
-  getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[] };
+  getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[]; utmParameters: UtmParameters };
 }
 
 export const useFormStore = create<FormState>((set, get) => ({
@@ -42,6 +44,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   startTime: Date.now(),
   sessionId: generateSessionId(),
   triggeredEvents: [],
+  utmParameters: {},
   
   setStep: (step) => {
     set({ currentStep: step });
@@ -51,7 +54,8 @@ export const useFormStore = create<FormState>((set, get) => ({
   
   getLatestFormData: () => ({
     formData: get().formData,
-    triggeredEvents: get().triggeredEvents
+    triggeredEvents: get().triggeredEvents,
+    utmParameters: get().utmParameters
   }),
   
   updateFormData: (data) => set((state) => ({
@@ -68,6 +72,10 @@ export const useFormStore = create<FormState>((set, get) => ({
   
   clearTriggeredEvents: () => set({ triggeredEvents: [] }),
   
+  setUtmParameters: (utm) => set((state) => ({
+    utmParameters: { ...state.utmParameters, ...utm }
+  })),
+  
   resetForm: () => set({
     currentStep: 1,
     formData: {},
@@ -75,7 +83,8 @@ export const useFormStore = create<FormState>((set, get) => ({
     isSubmitted: false,
     startTime: Date.now(),
     sessionId: generateSessionId(),
-    triggeredEvents: []
+    triggeredEvents: [],
+    utmParameters: {}
   }),
   
   canProceed: (step) => {

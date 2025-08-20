@@ -21,6 +21,7 @@ import {
   validateFormDataConsistency 
 } from './dataValidation';
 import { debugLog, errorLog } from '@/lib/logger';
+import { useFormStore } from '@/store/formStore';
 
 export class FormValidationError extends Error {
   constructor(public errors: { [key: string]: string[] }) {
@@ -41,6 +42,9 @@ export const submitFormData = async (
   if (!webhookUrl) {
     throw new Error('Form submission URL not configured. Please check environment variables.');
   }
+  
+  // Get the latest UTM parameters from the store
+  const { utmParameters } = useFormStore.getState();
   
   // Use the provided triggered events array
   debugLog('📊 Triggered events being sent:', triggeredEvents);
@@ -113,6 +117,14 @@ export const submitFormData = async (
     is_qualified_lead: isQualifiedLead,
     page_completed: step,
     triggered_events: triggeredEvents,
+    
+    // UTM Parameters (snake_case)
+    utm_source: utmParameters.utm_source || null,
+    utm_medium: utmParameters.utm_medium || null,
+    utm_campaign: utmParameters.utm_campaign || null,
+    utm_term: utmParameters.utm_term || null,
+    utm_content: utmParameters.utm_content || null,
+    utm_id: utmParameters.utm_id || null,
     
     // Timestamp
     created_at: new Date().toISOString()
