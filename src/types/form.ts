@@ -14,6 +14,16 @@ export const TARGET_GEOGRAPHIES = ['US', 'UK', 'Rest of World', 'Need Guidance']
 export const LEAD_CATEGORIES = ['bch', 'lum-l1', 'lum-l2', 'nurture', 'masters', 'drop'] as const;
 export type LeadCategory = typeof LEAD_CATEGORIES[number];
 
+// UTM Parameters interface
+export interface UtmParameters {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  utm_id?: string;
+}
+
 // Base form interfaces
 export interface FormStep {
   currentStep: number;
@@ -58,6 +68,7 @@ export type CompleteFormData = InitialLeadCaptureData & {
   selectedDate?: string;
   selectedSlot?: string;
   eventId?: string;
+  utmParameters?: UtmParameters;
 };
 
 // Form submission response

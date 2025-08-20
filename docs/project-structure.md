@@ -1,5 +1,106 @@
 # Project Structure Documentation
 
+## Project Tree Structure
+
+```
+apply-landing-page/
+├── .bolt/
+│   └── supabase_discarded_migrations/
+│       ├── 20250811074136_shiny_sky.sql
+│       └── 20250811100953_bold_haze.sql
+├── .env                              # Environment variables (hidden)
+├── .gitignore                        # Git ignore patterns (hidden)
+├── components.json                   # shadcn/ui configuration
+├── eslint.config.js                  # ESLint configuration
+├── index.html                        # HTML entry point
+├── netlify.toml                      # Netlify deployment configuration
+├── package.json                      # Node.js dependencies and scripts
+├── package-lock.json                 # Locked dependency versions (hidden)
+├── postcss.config.js                 # PostCSS configuration
+├── tailwind.config.js                # Tailwind CSS configuration
+├── tsconfig.json                     # TypeScript configuration (main)
+├── tsconfig.app.json                 # TypeScript configuration (app)
+├── tsconfig.node.json                # TypeScript configuration (node)
+├── vite.config.ts                    # Vite build configuration
+├── docs/                             # Project documentation
+│   ├── db-save-logic.md              # Database save logic documentation
+│   ├── db-schema.md                  # Database schema documentation
+│   ├── events.md                     # Meta Pixel events documentation
+│   ├── project-structure.md          # This file - project structure guide
+│   └── workflow-setup-v2.1.md        # Deployment workflow documentation
+├── public/                           # Static assets
+│   ├── bg-fav.jpg                    # Background favorite image
+│   ├── bh ig logo.png                # Beacon House Instagram logo
+│   ├── bh-logo.png                   # Beacon House logo
+│   ├── heroImage.webp                # Hero section image
+│   ├── karthik.png                   # Counselor profile image
+│   ├── lastCTAsectionBG.webp         # Final CTA section background
+│   └── vishy.png                     # Counselor profile image
+├── src/                              # Source code
+│   ├── App.tsx                       # Main application component
+│   ├── index.css                     # Global CSS styles and Tailwind directives
+│   ├── main.tsx                      # React application entry point
+│   ├── vite-env.d.ts                 # Vite environment type declarations
+│   ├── components/                   # React components
+│   │   ├── FormPage.tsx              # Form container page layout
+│   │   ├── Header.tsx                # Navigation header component
+│   │   ├── LandingPage.tsx           # Main marketing landing page
+│   │   ├── NotFound.tsx              # 404 error page component
+│   │   ├── forms/                    # Form-specific components
+│   │   │   ├── DisqualifiedLeadForm.tsx      # Page 2B - Contact form for disqualified leads
+│   │   │   ├── FormContainer.tsx             # Main form orchestrator and flow manager
+│   │   │   ├── InitialLeadCaptureForm.tsx    # Page 1 - Student info and preferences
+│   │   │   └── QualifiedLeadForm.tsx         # Page 2A - Counseling booking for qualified leads
+│   │   └── ui/                       # Reusable UI components
+│   │       ├── SequentialLoadingAnimation.tsx # Custom loading animation
+│   │       ├── button.tsx            # Button component with variants
+│   │       ├── card.tsx              # Card container components
+│   │       ├── dialog.tsx            # Modal dialog component
+│   │       ├── input.tsx             # Enhanced input component
+│   │       ├── label.tsx             # Form label component
+│   │       ├── progress.tsx          # Progress bar component
+│   │       ├── select.tsx            # Custom select dropdown
+│   │       └── toast.tsx             # Toast notification system
+│   ├── lib/                          # Utility libraries and business logic
+│   │   ├── analytics.ts              # Google Analytics integration
+│   │   ├── database.ts               # Supabase database operations
+│   │   ├── dataValidation.ts         # Data validation utilities
+│   │   ├── form.ts                   # Form submission and webhook integration
+│   │   ├── formTracking.ts           # Incremental form data tracking
+│   │   ├── formUtils.ts              # Form utilities (error handling, field focusing)
+│   │   ├── leadCategorization.ts     # Business logic for lead qualification
+│   │   ├── logger.ts                 # Conditional logging utility
+│   │   ├── metaPixelEvents.ts        # Meta Pixel event tracking system
+│   │   └── utils.ts                  # General utility functions
+│   ├── schemas/                      # Validation schemas
+│   │   └── form.ts                   # Zod validation schemas for forms
+│   ├── store/                        # State management
+│   │   └── formStore.ts              # Zustand store for form state
+│   └── types/                        # TypeScript type definitions
+│       └── form.ts                   # Form data type definitions and enums
+└── supabase/                         # Supabase configuration and migrations
+    └── migrations/                   # Database migration files
+        ├── 20250805102940_bronze_sound.sql
+        ├── 20250811091121_nameless_grass.sql
+        ├── 20250811093250_warm_truth.sql
+        ├── 20250811094843_dusty_bird.sql
+        ├── 20250811095926_bronze_breeze.sql
+        └── 20250811101126_silent_shrine.sql
+```
+
+### Key Directory Purposes
+
+- **`src/components/`**: All React components, organized by functionality
+- **`src/components/forms/`**: Form-specific components handling the 2-page application flow
+- **`src/components/ui/`**: Reusable UI components built on Radix UI primitives
+- **`src/lib/`**: Business logic, API integrations, and utility functions
+- **`src/schemas/`**: Runtime validation schemas using Zod
+- **`src/store/`**: Client-side state management using Zustand
+- **`src/types/`**: TypeScript type definitions and interfaces
+- **`docs/`**: Comprehensive project documentation
+- **`public/`**: Static assets (images, logos, backgrounds)
+- **`supabase/migrations/`**: Database schema evolution files
+
 ## Overview
 This is a React TypeScript application built with Vite, featuring a simplified 2-page form system for university admissions lead capture. The application uses Supabase for database operations and integrates with Make.com for email automation.
 

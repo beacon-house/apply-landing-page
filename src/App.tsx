@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { initializeAnalytics } from '@/lib/analytics';
 import { initializeMetaPixel } from '@/lib/metaPixelEvents';
+import { getUtmParametersFromUrl } from '@/lib/utm';
+import { useFormStore } from '@/store/formStore';
 import LandingPage from './components/LandingPage';
 import FormPage from './components/FormPage';
 import NotFound from './components/NotFound';
@@ -13,13 +15,19 @@ declare global {
 }
 
 function App() {
+  const { setUtmParameters } = useFormStore();
+  
   React.useEffect(() => {
     // Initialize Google Analytics
     initializeAnalytics();
     
     // Initialize Meta Pixel
     initializeMetaPixel();
-  }, []);
+    
+    // Extract and set UTM parameters
+    const utm = getUtmParametersFromUrl();
+    setUtmParameters(utm);
+  }, [setUtmParameters]);
 
   return (
     <Routes>

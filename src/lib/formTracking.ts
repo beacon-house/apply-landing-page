@@ -11,6 +11,7 @@
 
 import { supabase } from './database';
 import { debugLog, errorLog } from '@/lib/logger';
+import { useFormStore } from '@/store/formStore';
 
 // Generate unique session ID for tracking
 export const generateSessionId = (): string => {
@@ -35,6 +36,9 @@ export const saveFormDataIncremental = async (
     
     // Determine if this is a qualified lead
     const isQualifiedLead = ['bch', 'lum-l1', 'lum-l2'].includes(formData.lead_category || '');
+
+    // Get the latest UTM parameters from the store
+    const { utmParameters } = useFormStore.getState();
 
     // Prepare form data with consistent snake_case field names matching database schema
     const dbFormData = {
@@ -74,6 +78,14 @@ export const saveFormDataIncremental = async (
       page_completed: pageNumber,
       triggered_events: [],
       triggered_events: formData.triggeredEvents || [],
+      
+      // UTM Parameters (snake_case)
+      utm_source: utmParameters.utm_source || null,
+      utm_medium: utmParameters.utm_medium || null,
+      utm_campaign: utmParameters.utm_campaign || null,
+      utm_term: utmParameters.utm_term || null,
+      utm_content: utmParameters.utm_content || null,
+      utm_id: utmParameters.utm_id || null,
       
       created_at: new Date().toISOString()
     };
