@@ -50,8 +50,8 @@ export default function LandingPage() {
                   <span className="text-sm text-gray-600">Trustpilot Score: 4.6</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 font-sans leading-tight" style={{ fontDisplay: 'swap' }}>
-                  Eyeing the <span className="underline decoration-accent decoration-4">best universities worldwide</span>?<br />
-                  We'll make it happen.
+                  From the <span className="underline decoration-accent decoration-4">Ivy League</span> to <span className="underline decoration-accent decoration-4">Oxford & Cambridge</span> —<br />
+                  <span className="italic">We'll Get You There!</span>
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
                   We partner with exceptional Indian students, helping them achieve 7X higher acceptance rates at elite universities.
@@ -151,9 +151,9 @@ export default function LandingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {[
                   { name: 'Harvard', uni: '3 out of 100', our: '15 out of 100', multiplier: '4.3X' },
+                  { name: 'Oxford University', uni: '9 out of 100', our: '29 out of 100', multiplier: '3.2X' },
+                  { name: 'Cambridge University', uni: '11 out of 100', our: '36 out of 100', multiplier: '3.3X' },
                   { name: 'MIT', uni: '4 out of 100', our: '21 out of 100', multiplier: '5.4X' },
-                  { name: 'University of Chicago', uni: '5 out of 100', our: '28 out of 100', multiplier: '5.1X' },
-                  { name: 'University of Pennsylvania', uni: '8 out of 100', our: '24 out of 100', multiplier: '3X' },
                 ].map((school) => (
                   <div key={school.name} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
                     <div className="font-bold text-lg mb-4">{school.name}</div>
