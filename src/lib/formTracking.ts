@@ -61,7 +61,7 @@ export const saveFormDataIncremental = async (
       form_filler_type: formData.formFillerType,
       student_name: formData.studentName,
       current_grade: formData.currentGrade,
-      phone_number: (formData.countryCode || '') + (formData.phoneNumber || ''),
+      phone_number: formData.phoneNumber || null, // Use existing phone number, don't reconstruct
       
       // Page 1: Academic Information - using snake_case
       curriculum_type: formData.curriculumType,
@@ -88,7 +88,7 @@ export const saveFormDataIncremental = async (
       funnel_stage: funnelStage,
       is_qualified_lead: isQualifiedLead,
       page_completed: pageNumber,
-      triggered_events: [],
+      // triggered_events: [],
       triggered_events: formData.triggeredEvents || [],
       
       // UTM Parameters (snake_case)
@@ -165,6 +165,7 @@ export const trackFormSection = async (
       'initial_lead_capture': '01_form_start',
       'form_interaction_started': '01_form_start',
       'contact_details_complete': '09_page_2_parent_details_filled',
+      'contact_details_entered': '09_page_2_parent_details_filled', // Alias for consistency
       'counseling_slot_selected': '08_page_2_counselling_slot_selected',
       'final_submission': '10_form_submit',
       'form_started': '01_form_start'
@@ -200,7 +201,9 @@ export const trackPageCompletion = async (
   try {
     debugLog(`📄 Tracking page completion: Page ${pageNumber} (${pageType}) for session ${sessionId}`);
     
-    const funnelStage: FunnelStage = pageNumber === 1 ? '05_page1_complete' : '07_page_2_view';
+    // Use the pageType parameter instead of hardcoded mapping
+    // This allows the calling code to specify the correct funnel stage
+    const funnelStage: FunnelStage = pageType as FunnelStage;
     
     // Save complete page data
     await saveFormDataIncremental(
@@ -226,9 +229,8 @@ export const trackFormSubmission = async (
   try {
     debugLog(`🎯 Tracking form submission for session ${sessionId}`);
     
-    // Determine final funnel stage
-    const hasSelectedCounseling = Boolean(formData.selectedDate && formData.selectedSlot);
-    const finalStage: FunnelStage = hasSelectedCounseling ? '08_page_2_counselling_slot_selected' : '10_form_submit';
+    // Final funnel stage should always be form_submit for completed forms
+    const finalStage: FunnelStage = '10_form_submit';
     
     // Mark as final submission
     await saveFormDataIncremental(

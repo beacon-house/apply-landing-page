@@ -33,12 +33,12 @@ import { debugLog, errorLog } from '@/lib/logger';
 export default function FormContainer() {
   const {
     currentStep,
-    formData, // This is a snapshot, use getLatestFormData() for latest
+    formData, // This is a snapshot, use () for latest
     isSubmitting,
     isSubmitted,
     startTime,
     sessionId,
-    triggeredEvents, // This is a snapshot, use getLatestFormData() for latest
+    triggeredEvents, // This is a snapshot, use () for latest
     setStep,
     updateFormData,
     setSubmitting,
@@ -74,7 +74,7 @@ export default function FormContainer() {
     };
     
     trackFormStart();
-  }, [sessionId, startTime, getLatestFormData]); // Add getLatestFormData to dependencies
+  }, []); // Empty dependency array - only run once when component mounts
   
   // Test database connectivity on mount
   useEffect(() => {
@@ -159,6 +159,7 @@ export default function FormContainer() {
       // Track page 1 submission with incremental save, passing the latest state
       await trackPageCompletion(sessionId, 1, '05_page1_complete', {
         ...latestFormDataAfterUpdates, // Use latest form data
+        lead_category: leadCategory, // Explicitly include the determined lead category
         triggeredEvents: finalTriggeredEventsForPage1Save // Pass the latest events
       });
       trackFormStepComplete(1); // This tracks GA, not Meta Pixel
@@ -205,7 +206,7 @@ export default function FormContainer() {
         
         // No explicit incremental save here, as the useEffect below handles it
         // for disqualified leads when currentStep becomes 2.
-        // The useEffect will use getLatestFormData() to get the most current state.
+        // The useEffect will use () to get the most current state.
       }
       
     } catch (error) {
@@ -375,14 +376,14 @@ export default function FormContainer() {
       // We need to ensure the triggeredEvents are up-to-date for this incremental save.
       const trackPage2ViewForDisqualified = async () => {
         const { formData: latestFormData, triggeredEvents: latestTriggeredEvents } = getLatestFormData();
-        await saveFormDataIncremental(sessionId, 2, 'page2_view', {
+        await saveFormDataIncremental(sessionId, 2, '07_page_2_view', {
           ...latestFormData,
           triggeredEvents: latestTriggeredEvents
         });
       };
       trackPage2ViewForDisqualified();
     }
-  }, [currentStep, formData.lead_category, sessionId, getLatestFormData]);
+  }, [currentStep, formData.lead_category, sessionId]);
 
   // Evaluation steps for regular evaluation animation
   const evaluationSteps = [

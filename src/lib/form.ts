@@ -66,18 +66,8 @@ export const submitFormData = async (
   const isQualifiedLead = ['bch', 'lum-l1', 'lum-l2'].includes(sanitizedCategory || '');
   const isCounsellingBooked = Boolean(data.selectedDate && data.selectedSlot);
   
-  // Determine funnel stage
-  let funnelStage = '05_page1_complete';
-  if (step === 2) {
-    if (isCounsellingBooked) {
-      funnelStage = '08_page_2_counselling_slot_selected';
-    } else {
-      funnelStage = '09_page_2_parent_details_filled';
-    }
-  }
-  if (isComplete) {
-    funnelStage = '10_form_submit';
-  }
+  // Database funnel stage is managed by incremental saves only
+  // Webhook should not interfere with funnel stage tracking
 
   // Create the webhook payload with consistent snake_case field names matching database
   const webhookPayload: Record<string, any> = {
@@ -89,7 +79,7 @@ export const submitFormData = async (
     form_filler_type: data.formFillerType,
     student_name: data.studentName,
     current_grade: data.currentGrade,
-    phone_number: (data.countryCode || '') + (data.phoneNumber || ''),
+    phone_number: data.phoneNumber || null, // Use existing phone number, don't reconstruct
     
     // Page 1: Academic Information (snake_case)
     curriculum_type: data.curriculumType,
@@ -113,7 +103,7 @@ export const submitFormData = async (
     // System Fields (snake_case)
     lead_category: sanitizedCategory,
     is_counselling_booked: isCounsellingBooked,
-    funnel_stage: funnelStage,
+    // REMOVED: funnel_stage - Database funnel stage should only be managed by incremental saves
     is_qualified_lead: isQualifiedLead,
     page_completed: step,
     triggered_events: triggeredEvents,
