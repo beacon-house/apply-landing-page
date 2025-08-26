@@ -144,7 +144,7 @@ export function Header({ showCTA = true }: HeaderProps) {
             {/* CTA Button - Hidden on mobile/tablet, shown on desktop */}
           {showCTA && (
             <button
-             onClick={handleCTAClick}
+              onClick={handleCTAClick}
               className={`hidden sm:${showHeaderCTA ? 'block' : 'hidden'} bg-accent text-primary px-6 py-2 rounded-lg font-semibold hover:bg-accent-light transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base`}
             >
               Request an Evaluation
