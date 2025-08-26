@@ -67,16 +67,16 @@ export const submitFormData = async (
   const isCounsellingBooked = Boolean(data.selectedDate && data.selectedSlot);
   
   // Determine funnel stage
-  let funnelStage = 'page1_submitted';
+  let funnelStage = '05_page1_complete';
   if (step === 2) {
     if (isCounsellingBooked) {
-      funnelStage = 'counseling_booked';
+      funnelStage = '08_page_2_counselling_slot_selected';
     } else {
-      funnelStage = 'contact_details_entered';
+      funnelStage = '09_page_2_parent_details_filled';
     }
   }
   if (isComplete) {
-    funnelStage = 'form_complete';
+    funnelStage = '10_form_submit';
   }
 
   // Create the webhook payload with consistent snake_case field names matching database

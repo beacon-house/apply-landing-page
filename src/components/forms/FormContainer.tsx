@@ -62,7 +62,7 @@ export default function FormContainer() {
       try {
         // Use getLatestFormData to ensure we have the most current state for initial save
         const { formData: latestFormData, triggeredEvents: latestTriggeredEvents } = getLatestFormData();
-        await saveFormDataIncremental(sessionId, 1, 'form_start', {
+        await saveFormDataIncremental(sessionId, 1, '01_form_start', {
           ...latestFormData, // Include any existing form data
           sessionId,
           startTime,
@@ -157,7 +157,7 @@ export default function FormContainer() {
       const { triggeredEvents: finalTriggeredEventsForPage1Save } = getLatestFormData();
 
       // Track page 1 submission with incremental save, passing the latest state
-      await trackPageCompletion(sessionId, 1, 'page1_submitted', {
+      await trackPageCompletion(sessionId, 1, '05_page1_complete', {
         ...latestFormDataAfterUpdates, // Use latest form data
         triggeredEvents: finalTriggeredEventsForPage1Save // Pass the latest events
       });
@@ -340,7 +340,7 @@ export default function FormContainer() {
     // Track that lead has been evaluated and save page 2 view data incrementally
     const trackLeadEvaluatedAndSavePage2View = async () => {
       try {
-        await saveFormDataIncremental(sessionId, 2, 'lead_evaluated', {
+        await saveFormDataIncremental(sessionId, 2, '06_lead_evaluated', {
           ...latestFormDataBeforePage2View, // Use latest form data
           triggeredEvents: finalTriggeredEventsForPage2ViewSave // Pass the latest events
         });

@@ -18,8 +18,20 @@ export const generateSessionId = (): string => {
   return crypto.randomUUID();
 };
 
-// Funnel stages
-export type FunnelStage = 'form_start' | 'page1_in_progress' | 'page1_submitted' | 'lead_evaluated' | 'page2_view' | 'contact_details_entered' | 'counseling_booked' | 'form_complete' | 'abandoned';
+// Funnel stages - Updated with descriptive names
+// Only these stages should be used for new leads going forward
+export type FunnelStage = 
+  | '01_form_start'
+  | '02_page1_student_info_filled'
+  | '03_page1_academic_info_filled'
+  | '04_page1_scholarship_info_filled'
+  | '05_page1_complete'
+  | '06_lead_evaluated'
+  | '07_page_2_view'
+  | '08_page_2_counselling_slot_selected'
+  | '09_page_2_parent_details_filled'
+  | '10_form_submit'
+  | 'abandoned';
 
 /**
  * Save form data incrementally using the simplified upsert function
@@ -144,21 +156,23 @@ export const trackFormSection = async (
   try {
     debugLog(`📝 Tracking form section: ${sectionName} for session ${sessionId}`);
     
-    // Map section names to funnel stages
+    // Map section names to funnel stages - Updated with new naming
+    // Only use our 10 defined funnel stages, prevent meta events from being stored
     const funnelStageMap: Record<string, FunnelStage> = {
-      'student_info_complete': 'page1_in_progress',
-      'academic_info_complete': 'page1_in_progress', 
-      'preferences_complete': 'page1_in_progress',
-      'initial_lead_capture': 'page1_in_progress',
-      'form_interaction_started': 'page1_in_progress',
-      'contact_details_complete': 'contact_details_entered',
-      'counseling_slot_selected': 'counseling_booked',
-      'page_2_view': 'page2_view',
-      'final_submission': 'form_complete',
-      'form_started': 'form_start'
+      'student_info_complete': '02_page1_student_info_filled',
+      'academic_info_complete': '03_page1_academic_info_filled', 
+      'preferences_complete': '04_page1_scholarship_info_filled',
+      'initial_lead_capture': '01_form_start',
+      'form_interaction_started': '01_form_start',
+      'contact_details_complete': '09_page_2_parent_details_filled',
+      'counseling_slot_selected': '08_page_2_counselling_slot_selected',
+      'final_submission': '10_form_submit',
+      'form_started': '01_form_start'
+      // Note: 'page_2_view' removed - this was a meta event, not a funnel stage
     };
     
-    const funnelStage = funnelStageMap[sectionName] || 'page1_complete';
+    // Ensure we only use valid funnel stages, fallback to form start if unknown
+    const funnelStage = funnelStageMap[sectionName] || '01_form_start';
     
     // Save the data incrementally
     await saveFormDataIncremental(
@@ -186,7 +200,7 @@ export const trackPageCompletion = async (
   try {
     debugLog(`📄 Tracking page completion: Page ${pageNumber} (${pageType}) for session ${sessionId}`);
     
-    const funnelStage: FunnelStage = pageNumber === 1 ? 'page1_submitted' : 'page2_view';
+    const funnelStage: FunnelStage = pageNumber === 1 ? '05_page1_complete' : '07_page_2_view';
     
     // Save complete page data
     await saveFormDataIncremental(
@@ -214,7 +228,7 @@ export const trackFormSubmission = async (
     
     // Determine final funnel stage
     const hasSelectedCounseling = Boolean(formData.selectedDate && formData.selectedSlot);
-    const finalStage: FunnelStage = hasSelectedCounseling ? 'counseling_booked' : 'form_complete';
+    const finalStage: FunnelStage = hasSelectedCounseling ? '08_page_2_counselling_slot_selected' : '10_form_submit';
     
     // Mark as final submission
     await saveFormDataIncremental(
@@ -292,7 +306,7 @@ export const trackStep = (
   stepType: string,
   formData: any
 ): void => {
-  // Convert legacy calls to new format
-  const funnelStage: FunnelStage = stepNumber === 1 ? 'page1_complete' : 'page2_view';
+  // Convert legacy calls to new format - use proper funnel stages
+  const funnelStage: FunnelStage = stepNumber === 1 ? '05_page1_complete' : '07_page_2_view';
   saveFormDataIncremental(sessionId, stepNumber, funnelStage, formData);
 };

@@ -60,14 +60,16 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 
 | Stage | Description | Trigger Condition |
 |---|---|---|
-| `form_start` | User has landed on the form page | Form component mounts and loads |
-| `page1_in_progress` | User is actively filling Page 1 | User has started interacting with Page 1 fields |
-| `page1_submitted` | Page 1 form data submitted | Page 1 validation passes and data is submitted |
-| `lead_evaluated` | Lead profile has been evaluated | Evaluation animation completes for qualified leads |
-| `page2_view` | User has reached Page 2 | Page 2 loads (either counseling booking or contact form) |
-| `contact_details_entered` | Parent contact information provided | Parent name and email have been entered |
-| `counseling_booked` | Counseling session scheduled | Date and time slot selected |
-| `form_complete` | Form fully submitted | Final submission completed successfully |
+| `01_form_start` | User has landed on the form page | Form component mounts and loads |
+| `02_page1_student_info_filled` | Student information section completed | Name, grade, phone number filled |
+| `03_page1_academic_info_filled` | Academic information section completed | School, curriculum, grades filled |
+| `04_page1_scholarship_info_filled` | Scholarship preferences completed | Scholarship needs and target countries filled |
+| `05_page1_complete` | Page 1 form data submitted | Page 1 validation passes and data is submitted |
+| `06_lead_evaluated` | Lead profile has been evaluated | Evaluation animation completes for qualified leads |
+| `07_page_2_view` | User has reached Page 2 | Page 2 loads (either counseling booking or contact form) |
+| `08_page_2_counselling_slot_selected` | Counseling session scheduled | Date and time slot selected for qualified leads |
+| `09_page_2_parent_details_filled` | Parent contact information provided | Parent name and email have been entered |
+| `10_form_submit` | Form fully submitted | Final submission completed successfully |
 | `abandoned` | User left without completing | Form abandonment detected |
 
 ### Funnel Stage Logic
@@ -75,10 +77,10 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 ```javascript
 // Enhanced funnel stage determination logic
 const funnelStage = 
-  step === 1 ? 'page1_submitted' :
-  step === 2 && isCounsellingBooked ? 'counseling_booked' :
-  step === 2 ? 'contact_details_entered' :
-  isComplete ? 'form_complete' : 'page2_view';
+  step === 1 ? '05_page1_complete' :
+  step === 2 && isCounsellingBooked ? '08_page_2_counselling_slot_selected' :
+  step === 2 ? '09_page_2_parent_details_filled' :
+  isComplete ? '10_form_submit' : '07_page_2_view';
 ```
 
 ## Lead Categories
@@ -193,15 +195,16 @@ Custom PostgreSQL function that handles:
 
 ### Save Sequence
 
-1. **Form Start** → `form_start` stage set when form loads
-2. **First Interaction** → `page1_in_progress` stage when user starts filling Page 1
-3. **Form Section Completion** → `trackFormSection()` → `saveFormDataIncremental()`
-4. **Page 1 Submission** → `trackPageCompletion()` → `page1_submitted` stage
-5. **Lead Evaluation** → (qualified leads only) → `lead_evaluated` stage
-6. **Page 2 View** → `page2_view` stage when user reaches second page
-7. **Contact Details** → `contact_details_entered` when parent info provided
-8. **Counseling Booking** → (qualified leads only) → `counseling_booked` stage
-9. **Form Submission** → `trackFormSubmission()` → `form_complete` stage
+1. **Form Start** → `01_form_start` stage set when form loads
+2. **Student Info Complete** → `02_page1_student_info_filled` when basic info provided
+3. **Academic Info Complete** → `03_page1_academic_info_filled` when school/grades provided
+4. **Scholarship Info Complete** → `04_page1_scholarship_info_filled` when preferences set
+5. **Page 1 Submission** → `trackPageCompletion()` → `05_page1_complete` stage
+6. **Lead Evaluation** → (qualified leads only) → `06_lead_evaluated` stage
+7. **Page 2 View** → `07_page_2_view` stage when user reaches second page
+8. **Counseling Booking** → (qualified leads only) → `08_page_2_counselling_slot_selected` stage
+9. **Parent Details** → `09_page_2_parent_details_filled` when contact info provided
+10. **Form Submission** → `trackFormSubmission()` → `10_form_submit` stage
 
 ### Dual-Save Architecture
 
