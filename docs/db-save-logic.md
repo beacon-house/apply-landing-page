@@ -75,24 +75,12 @@ The application uses **camelCase** in the frontend and **snake_case** in the dat
 ### Funnel Stage Logic
 
 ```javascript
-// Enhanced funnel stage determination logic
-const funnelStage = 
-  step === 1 ? '05_page1_complete' :
   step === 2 && isCounsellingBooked ? '08_page_2_counselling_slot_selected' :
-  step === 2 ? '09_page_2_parent_details_filled' :
-  isComplete ? '10_form_submit' : '07_page_2_view';
 ```
 
 ## Lead Categories
-
 ### Valid Lead Category Values
-
-| Category | Description | Qualification Criteria |
-|---|---|---|
 | `bch` | Beacon House qualified leads | High-priority qualified leads |
-| `lum-l1` | Luminaire Level 1 | Mid-priority qualified leads |
-| `lum-l2` | Luminaire Level 2 | Lower-priority qualified leads |
-| `nurture` | Nurture leads | Leads requiring development |
 | `masters` | Masters applicants | Graduate program seekers |
 | `drop` | Dropped leads | Grade 7 and below |
 
@@ -117,10 +105,6 @@ const funnelStage =
 - `school_name` ✓
 - `grade_format` ✓
 - `gpa_value` OR `percentage_value` ✓ (based on format)
-- `scholarship_requirement` ✓
-- `target_geographies` ✓ (array with at least 1 item)
-
-**Page 2A (Qualified Leads)**:
 - `parent_name` ✓
 - `parent_email` ✓
 - `selected_date` ✓
