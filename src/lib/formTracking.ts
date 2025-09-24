@@ -61,6 +61,7 @@ export const saveFormDataIncremental = async (
       form_filler_type: formData.formFillerType,
       student_name: formData.studentName,
       current_grade: formData.currentGrade,
+      location: formData.location,
       phone_number: formData.phoneNumber || null, // Use existing phone number, don't reconstruct
       
       // Page 1: Academic Information - using snake_case

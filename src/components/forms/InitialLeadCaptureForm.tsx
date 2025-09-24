@@ -58,6 +58,7 @@ const FIELD_ORDER: (keyof InitialLeadCaptureData)[] = [
   'formFillerType',
   'studentName',
   'currentGrade',
+  'location',
   'countryCode',
   'phoneNumber',
   'curriculumType',
@@ -264,6 +265,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
       watchedFields.formFillerType &&
       watchedFields.studentName &&
       watchedFields.currentGrade &&
+      watchedFields.location &&
       watchedFields.countryCode &&
       watchedFields.phoneNumber
     );
@@ -273,12 +275,13 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
         formFillerType: watchedFields.formFillerType,
         studentName: watchedFields.studentName,
         currentGrade: watchedFields.currentGrade,
+        location: watchedFields.location,
         countryCode: watchedFields.countryCode,
         phoneNumber: watchedFields.phoneNumber,
         sessionId
       });
     }
-  }, [watchedFields.formFillerType, watchedFields.studentName, watchedFields.currentGrade, watchedFields.countryCode, watchedFields.phoneNumber, sessionId]);
+  }, [watchedFields.formFillerType, watchedFields.studentName, watchedFields.currentGrade, watchedFields.location, watchedFields.countryCode, watchedFields.phoneNumber, sessionId]);
 
   React.useEffect(() => {
     const academicInfoComplete = !!(
@@ -400,6 +403,23 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
             />
             {errors.currentGrade && (
               <p className="text-sm text-red-500 italic">Please answer this question</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Current City/Town/Place of Residence <span className="text-red-500">*</span></Label>
+            <Input
+              placeholder="e.g., Mumbai, London, New York"
+              id="location"
+              {...register('location')}
+              className={cn(
+                "h-12 bg-white",
+                errors.location ? 'border-red-500 focus:border-red-500' : ''
+              )}
+              data-field="location"
+            />
+            {errors.location && (
+              <p className="text-sm text-red-500 italic">Please enter your current city/town/place of residence</p>
             )}
           </div>
 

@@ -79,6 +79,7 @@ export const submitFormData = async (
     form_filler_type: data.formFillerType,
     student_name: data.studentName,
     current_grade: data.currentGrade,
+    location: data.location || null,
     phone_number: data.phoneNumber || null, // Use existing phone number, don't reconstruct
     
     // Page 1: Academic Information (snake_case)

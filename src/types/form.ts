@@ -35,6 +35,7 @@ export interface InitialLeadCaptureData {
   formFillerType: typeof FORM_FILLER_TYPES[number];
   studentName: string;
   currentGrade: typeof GRADE_LEVELS[number];
+  location: string;
   curriculumType: typeof CURRICULUM_TYPES[number];
   gradeFormat: typeof GRADE_FORMAT_OPTIONS[number];
   gpaValue?: string;
@@ -63,6 +64,7 @@ export interface DisqualifiedLeadData {
 // Combined form data type
 export type CompleteFormData = InitialLeadCaptureData & {
   lead_category?: LeadCategory;
+  location?: string;
   parentName?: string;
   email?: string;
   selectedDate?: string;

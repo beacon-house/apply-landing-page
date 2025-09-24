@@ -13,6 +13,7 @@ export const initialLeadCaptureSchema = z.object({
   formFillerType: z.enum(FORM_FILLER_TYPES, { errorMap: () => ({ message: "Please answer this question" }) }),
   studentName: z.string().min(2, "Please enter the student's full name"),
   currentGrade: z.enum(GRADE_LEVELS, { errorMap: () => ({ message: "Please answer this question" }) }),
+  location: z.string().min(2, "Please enter your current city/town/place of residence"),
   
   // Academic info
   curriculumType: z.enum(CURRICULUM_TYPES, { errorMap: () => ({ message: "Please answer this question" }) }),
