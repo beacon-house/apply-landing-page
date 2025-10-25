@@ -1,23 +1,3 @@
--- Update the existing table to remove the 'staging' default
-ALTER TABLE public.form_sessions 
-ALTER COLUMN environment DROP DEFAULT;
-| `utmParameters.utm_source` | `utm_source` | text | UTM Source parameter |
-| `utmParameters.utm_medium` | `utm_medium` | text | UTM Medium parameter |
-| `utmParameters.utm_campaign` | `utm_campaign` | text | UTM Campaign parameter |
-| `utmParameters.utm_term` | `utm_term` | text | UTM Term parameter |
-| `utmParameters.utm_content` | `utm_content` | text | UTM Content parameter |
-| `utmParameters.utm_id` | `utm_id` | text | UTM ID parameter |
-| `utm_source` | text | UTM Source (campaign source) | null |
-| `utm_medium` | text | UTM Medium (campaign medium) | null |
-| `utm_campaign` | text | UTM Campaign (campaign name) | null |
-| `utm_term` | text | UTM Term (search keywords) | null |
-| `utm_content` | text | UTM Content (content variation) | null |
-| `utm_id` | text | UTM ID (unique campaign identifier) | null |
-
-## Complete Database Schema SQL
-
-**Use this SQL script to recreate the complete `form_sessions` table structure in a new Supabase branch:**
-
 ```sql
 -- ====================================
 -- COMPLETE FORM_SESSIONS TABLE SCHEMA
@@ -77,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.form_sessions (
   -- System/Calculated Fields
   lead_category text,
   is_counselling_booked boolean DEFAULT false,
-  funnel_stage text DEFAULT 'initial_capture',
+  funnel_stage text DEFAULT '01_form_start',
   is_qualified_lead boolean DEFAULT false,
   page_completed integer DEFAULT 1,
   triggered_events jsonb DEFAULT '[]'::jsonb,
@@ -216,7 +196,7 @@ BEGIN
     p_form_data->>'selected_slot',
     p_form_data->>'lead_category',
     COALESCE((p_form_data->>'is_counselling_booked')::boolean, false),
-    COALESCE(p_form_data->>'funnel_stage', 'initial_capture'),
+    COALESCE(p_form_data->>'funnel_stage', '01_form_start'),
     COALESCE((p_form_data->>'is_qualified_lead')::boolean, false),
     COALESCE((p_form_data->>'page_completed')::integer, 1),
     COALESCE(p_form_data->'triggered_events', '[]'::jsonb),
@@ -272,19 +252,6 @@ CREATE TRIGGER update_form_sessions_timestamp
   FOR EACH ROW
   EXECUTE FUNCTION public.update_timestamp();
 
--- Trigger to send data to external webhook (Make.com)
--- NOTE: Replace the webhook URL with your actual Make.com webhook URL for the specific environment
-CREATE TRIGGER "send-to-google-sheet"
-  AFTER INSERT OR UPDATE ON public.form_sessions
-  FOR EACH ROW
-  EXECUTE FUNCTION supabase_functions.http_request(
-    'https://hook.us2.make.com/k27ggly1lagif6mcudpdlxgmgqatnleq',
-    'POST',
-    '{"Content-type":"application/json"}',
-    '{}',
-    '5000'
-  );
-
 -- 8. Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
@@ -294,132 +261,4 @@ GRANT ALL ON public.form_sessions TO service_role;
 GRANT EXECUTE ON FUNCTION public.upsert_form_session(text, jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.upsert_form_session(text, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_form_session(text, jsonb) TO service_role;
-
--- ====================================
--- VERIFICATION QUERIES
--- ====================================
--- Run these to verify the setup worked correctly:
-
--- Check table structure
--- SELECT column_name, data_type, is_nullable, column_default 
--- FROM information_schema.columns 
--- WHERE table_name = 'form_sessions' 
--- ORDER BY ordinal_position;
-
--- Check indexes
--- SELECT indexname, indexdef 
--- FROM pg_indexes 
--- WHERE tablename = 'form_sessions';
-
--- Check RLS policies
--- SELECT policyname, cmd, roles, qual, with_check 
--- FROM pg_policies 
--- WHERE tablename = 'form_sessions';
-
--- Check triggers
--- SELECT trigger_name, event_manipulation, action_statement 
--- FROM information_schema.triggers 
--- WHERE event_object_table = 'form_sessions';
 ```
-
-## Important Notes for New Branch Setup
-
-1. **Webhook URL**: Update the webhook URL in the trigger to match your staging environment
-2. **Environment Variables**: Ensure your staging branch has the correct environment variables
-3. **Testing**: After running the script, test with a form submission to verify everything works
-4. **Permissions**: The script includes all necessary permissions for anon, authenticated, and service_role users
-
--- Update the upsert function to handle environment properly
-CREATE OR REPLACE FUNCTION public.upsert_form_session(
-  p_session_id text,
-  p_form_data jsonb
-)
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_id uuid;
-BEGIN
-  -- Insert or update the form session
-  INSERT INTO public.form_sessions (
-    session_id,
-    environment,
-    form_filler_type,
-    current_grade,
-    phone_number,
-    curriculum_type,
-    grade_format,
-    gpa_value,
-    percentage_value,
-    school_name,
-    scholarship_requirement,
-    target_geographies,
-    parent_name,
-    parent_email,
-    selected_date,
-    selected_slot,
-    lead_category,
-    is_counselling_booked,
-    funnel_stage,
-    is_qualified_lead,
-    page_completed,
-    triggered_events,
-    student_name
-  )
-  VALUES (
-    p_session_id,
-    p_form_data->>'environment',
-    p_form_data->>'form_filler_type',
-    p_form_data->>'current_grade',
-    p_form_data->>'phone_number',
-    p_form_data->>'curriculum_type',
-    p_form_data->>'grade_format',
-    p_form_data->>'gpa_value',
-    p_form_data->>'percentage_value',
-    p_form_data->>'school_name',
-    p_form_data->>'scholarship_requirement',
-    p_form_data->'target_geographies',
-    p_form_data->>'parent_name',
-    p_form_data->>'parent_email',
-    p_form_data->>'selected_date',
-    p_form_data->>'selected_slot',
-    p_form_data->>'lead_category',
-    (p_form_data->>'is_counselling_booked')::boolean,
-    COALESCE(p_form_data->>'funnel_stage', 'initial_capture'),
-    COALESCE((p_form_data->>'is_qualified_lead')::boolean, false),
-    COALESCE((p_form_data->>'page_completed')::integer, 1),
-    COALESCE(p_form_data->'triggered_events', '[]'::jsonb),
-    p_form_data->>'student_name'
-  )
-  ON CONFLICT (session_id)
-  DO UPDATE SET
-    environment = COALESCE(EXCLUDED.environment, form_sessions.environment),
-    form_filler_type = COALESCE(EXCLUDED.form_filler_type, form_sessions.form_filler_type),
-    current_grade = COALESCE(EXCLUDED.current_grade, form_sessions.current_grade),
-    phone_number = COALESCE(EXCLUDED.phone_number, form_sessions.phone_number),
-    curriculum_type = COALESCE(EXCLUDED.curriculum_type, form_sessions.curriculum_type),
-    grade_format = COALESCE(EXCLUDED.grade_format, form_sessions.grade_format),
-    gpa_value = COALESCE(EXCLUDED.gpa_value, form_sessions.gpa_value),
-    percentage_value = COALESCE(EXCLUDED.percentage_value, form_sessions.percentage_value),
-    school_name = COALESCE(EXCLUDED.school_name, form_sessions.school_name),
-    scholarship_requirement = COALESCE(EXCLUDED.scholarship_requirement, form_sessions.scholarship_requirement),
-    target_geographies = COALESCE(EXCLUDED.target_geographies, form_sessions.target_geographies),
-    parent_name = COALESCE(EXCLUDED.parent_name, form_sessions.parent_name),
-    parent_email = COALESCE(EXCLUDED.parent_email, form_sessions.parent_email),
-    selected_date = COALESCE(EXCLUDED.selected_date, form_sessions.selected_date),
-    selected_slot = COALESCE(EXCLUDED.selected_slot, form_sessions.selected_slot),
-    lead_category = COALESCE(EXCLUDED.lead_category, form_sessions.lead_category),
-    is_counselling_booked = COALESCE(EXCLUDED.is_counselling_booked, form_sessions.is_counselling_booked),
-    funnel_stage = COALESCE(EXCLUDED.funnel_stage, form_sessions.funnel_stage),
-    is_qualified_lead = COALESCE(EXCLUDED.is_qualified_lead, form_sessions.is_qualified_lead),
-    page_completed = COALESCE(EXCLUDED.page_completed, form_sessions.page_completed),
-    triggered_events = COALESCE(EXCLUDED.triggered_events, form_sessions.triggered_events),
-    student_name = COALESCE(EXCLUDED.student_name, form_sessions.student_name),
-    updated_at = now()
-  RETURNING id INTO v_id;
-  
-  RETURN v_id;
-END;
-$$;
