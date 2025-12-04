@@ -1,7 +1,14 @@
--- Beacon House Form Sessions Database Schema
--- Copy and paste this entire file into your Supabase SQL editor
+-- =============================================================================
+-- BEACON HOUSE FORM SESSIONS - COMPLETE DATABASE SCHEMA
+-- =============================================================================
+-- Copy and paste this entire file into your Supabase SQL editor to replicate
+-- the form_sessions table with all triggers, functions, RLS policies, and indexes
+-- =============================================================================
 
--- Create form_sessions table
+-- -----------------------------------------------------------------------------
+-- 1. CREATE TABLE: form_sessions
+-- -----------------------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS public.form_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id text UNIQUE NOT NULL,
@@ -38,16 +45,108 @@ CREATE TABLE IF NOT EXISTS public.form_sessions (
   utm_id text
 );
 
--- Create indexes
-CREATE INDEX IF NOT EXISTS idx_form_sessions_session_id ON form_sessions(session_id);
-CREATE INDEX IF NOT EXISTS idx_form_sessions_lead_category ON form_sessions(lead_category);
-CREATE INDEX IF NOT EXISTS idx_form_sessions_funnel_stage ON form_sessions(funnel_stage);
-CREATE INDEX IF NOT EXISTS idx_form_sessions_created_at ON form_sessions(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_form_sessions_is_qualified ON form_sessions(is_qualified_lead) WHERE is_qualified_lead = true;
-CREATE INDEX IF NOT EXISTS idx_form_sessions_is_booked ON form_sessions(is_counselling_booked) WHERE is_counselling_booked = true;
-CREATE INDEX IF NOT EXISTS idx_form_sessions_environment ON form_sessions(environment);
+-- -----------------------------------------------------------------------------
+-- 2. ENABLE ROW LEVEL SECURITY
+-- -----------------------------------------------------------------------------
 
--- Create upsert function
+ALTER TABLE public.form_sessions ENABLE ROW LEVEL SECURITY;
+
+-- -----------------------------------------------------------------------------
+-- 3. CREATE RLS POLICIES (7 policies)
+-- -----------------------------------------------------------------------------
+
+-- Policy 1: Anonymous users can view form sessions
+CREATE POLICY "Anonymous users can view form sessions"
+ON public.form_sessions
+FOR SELECT
+TO anon
+USING (true);
+
+-- Policy 2: Anonymous users can create form sessions
+CREATE POLICY "Anonymous users can create form sessions"
+ON public.form_sessions
+FOR INSERT
+TO anon
+WITH CHECK (true);
+
+-- Policy 3: Anonymous users can update form sessions
+CREATE POLICY "Anonymous users can update form sessions"
+ON public.form_sessions
+FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- Policy 4: Authenticated users can view form sessions
+CREATE POLICY "Authenticated users can view form sessions"
+ON public.form_sessions
+FOR SELECT
+TO authenticated
+USING (true);
+
+-- Policy 5: Authenticated users can insert form sessions
+CREATE POLICY "Authenticated users can insert form sessions"
+ON public.form_sessions
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+-- Policy 6: Authenticated users can update form sessions
+CREATE POLICY "Authenticated users can update form sessions"
+ON public.form_sessions
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+-- Policy 7: Service role can access all form sessions
+CREATE POLICY "Service role can access all form sessions"
+ON public.form_sessions
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- -----------------------------------------------------------------------------
+-- 4. CREATE INDEXES (7 indexes for performance)
+-- -----------------------------------------------------------------------------
+
+CREATE INDEX IF NOT EXISTS idx_form_sessions_session_id ON public.form_sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_form_sessions_lead_category ON public.form_sessions(lead_category);
+CREATE INDEX IF NOT EXISTS idx_form_sessions_funnel_stage ON public.form_sessions(funnel_stage);
+CREATE INDEX IF NOT EXISTS idx_form_sessions_created_at ON public.form_sessions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_form_sessions_is_qualified ON public.form_sessions(is_qualified_lead) WHERE is_qualified_lead = true;
+CREATE INDEX IF NOT EXISTS idx_form_sessions_is_booked ON public.form_sessions(is_counselling_booked) WHERE is_counselling_booked = true;
+CREATE INDEX IF NOT EXISTS idx_form_sessions_environment ON public.form_sessions(environment);
+
+-- -----------------------------------------------------------------------------
+-- 5. CREATE FUNCTION: update_timestamp()
+-- -----------------------------------------------------------------------------
+-- Purpose: Automatically updates the updated_at column on row updates
+-- Used by: update_form_sessions_timestamp trigger
+
+CREATE OR REPLACE FUNCTION public.update_timestamp()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$;
+
+-- -----------------------------------------------------------------------------
+-- 6. CREATE FUNCTION: upsert_form_session()
+-- -----------------------------------------------------------------------------
+-- Purpose: Insert or update form session data with intelligent COALESCE merging
+-- Parameters:
+--   - p_session_id: Unique session identifier
+--   - p_form_data: JSONB object with all form fields in snake_case
+-- Returns: UUID of the inserted/updated record
+-- Used by: Frontend via supabase.rpc('upsert_form_session', {...})
+
 CREATE OR REPLACE FUNCTION public.upsert_form_session(
   p_session_id text,
   p_form_data jsonb
@@ -56,7 +155,7 @@ RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $$
+AS $function$
 DECLARE
   v_id uuid;
 BEGIN
@@ -160,4 +259,175 @@ BEGIN
 
   RETURN v_id;
 END;
-$$;
+$function$;
+
+-- -----------------------------------------------------------------------------
+-- 7. CREATE FUNCTION: auto_assign_new_lead()
+-- -----------------------------------------------------------------------------
+-- Purpose: Automatically creates CRM leads and assigns counselors on new form submissions
+-- Trigger: AFTER INSERT on form_sessions
+-- Logic:
+--   - Creates crm_leads entry for all new form submissions
+--   - Assigns 'bch' category leads to vishy@beaconhouse.com
+--   - Assigns 'lum-l1' and 'lum-l2' category leads to karthik@beaconhouse.com
+--   - Leaves other categories unassigned
+--   - Creates audit comment in crm_comments
+-- Note: Requires counselors and crm_leads tables to exist
+
+CREATE OR REPLACE FUNCTION public.auto_assign_new_lead()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+    v_system_counselor_id uuid := '00000000-0000-0000-0000-000000000000';
+    v_assigned_counselor_id uuid;
+    v_crm_lead_exists boolean := FALSE;
+    v_counselor_name text;
+BEGIN
+    IF TG_OP != 'INSERT' THEN
+        RETURN NEW;
+    END IF;
+
+    RAISE NOTICE 'Auto-assignment triggered for session_id: % (lead_category: %, is_qualified: %)',
+        NEW.session_id, NEW.lead_category, NEW.is_qualified_lead;
+
+    SELECT EXISTS (
+        SELECT 1 FROM public.crm_leads
+        WHERE session_id = NEW.session_id
+    ) INTO v_crm_lead_exists;
+
+    IF NOT v_crm_lead_exists THEN
+        IF NEW.lead_category = 'bch' THEN
+            SELECT id INTO v_assigned_counselor_id FROM public.counselors WHERE email = 'vishy@beaconhouse.com';
+        ELSIF NEW.lead_category IN ('lum-l1', 'lum-l2') THEN
+            SELECT id INTO v_assigned_counselor_id FROM public.counselors WHERE email = 'karthik@beaconhouse.com';
+        ELSE
+            v_assigned_counselor_id := NULL;
+        END IF;
+
+        INSERT INTO public.crm_leads (
+            session_id,
+            lead_status,
+            assigned_to,
+            created_at,
+            updated_at
+        ) VALUES (
+            NEW.session_id,
+            '01_yet_to_contact',
+            v_assigned_counselor_id,
+            now(),
+            now()
+        );
+
+        RAISE NOTICE 'Created crm_leads entry for lead: % (category: %, assigned: %)',
+            NEW.session_id, NEW.lead_category,
+            CASE WHEN v_assigned_counselor_id IS NOT NULL THEN 'Yes' ELSE 'No' END;
+    ELSE
+        RAISE NOTICE 'crm_leads entry already exists for session: %', NEW.session_id;
+    END IF;
+
+    IF v_assigned_counselor_id IS NOT NULL THEN
+        SELECT name INTO v_counselor_name FROM public.counselors WHERE id = v_assigned_counselor_id;
+
+        INSERT INTO public.crm_comments (
+            session_id,
+            counselor_id,
+            comment_text,
+            lead_status_at_comment,
+            created_at
+        ) VALUES (
+            NEW.session_id,
+            v_system_counselor_id,
+            format('Auto-assigned to %s (Category: %s, Qualified: %s)',
+                v_counselor_name,
+                COALESCE(NEW.lead_category, 'Unknown'),
+                CASE WHEN NEW.is_qualified_lead THEN 'Yes' ELSE 'No' END
+            ),
+            '01_yet_to_contact',
+            now()
+        );
+    ELSE
+        INSERT INTO public.crm_comments (
+            session_id,
+            counselor_id,
+            comment_text,
+            lead_status_at_comment,
+            created_at
+        ) VALUES (
+            NEW.session_id,
+            v_system_counselor_id,
+            format('Lead added to CRM as unassigned (Category: %s, Qualified: %s)',
+                COALESCE(NEW.lead_category, 'Unknown'),
+                CASE WHEN NEW.is_qualified_lead THEN 'Yes' ELSE 'No' END
+            ),
+            '01_yet_to_contact',
+            now()
+        );
+    END IF;
+
+    RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE WARNING 'Auto-assignment failed for session %: % %', NEW.session_id, SQLSTATE, SQLERRM;
+        RETURN NEW;
+END;
+$function$;
+
+-- -----------------------------------------------------------------------------
+-- 8. CREATE TRIGGERS (2 triggers)
+-- -----------------------------------------------------------------------------
+
+-- Trigger 1: Auto-update updated_at timestamp on every UPDATE
+CREATE TRIGGER update_form_sessions_timestamp
+BEFORE UPDATE ON public.form_sessions
+FOR EACH ROW
+EXECUTE FUNCTION public.update_timestamp();
+
+-- Trigger 2: Auto-assign new leads to counselors on INSERT
+-- Note: This trigger requires counselors, crm_leads, and crm_comments tables
+-- If those tables don't exist, this trigger will fail silently due to exception handling
+CREATE TRIGGER trigger_auto_assign_new_lead
+AFTER INSERT ON public.form_sessions
+FOR EACH ROW
+EXECUTE FUNCTION public.auto_assign_new_lead();
+
+-- =============================================================================
+-- END OF SCHEMA
+-- =============================================================================
+
+-- WHEN DATABASE WRITES HAPPEN (Frontend Form Flow):
+--
+-- 1. Form Start (01_form_start)
+--    - Triggered when form component mounts
+--    - Creates initial session_id using crypto.randomUUID()
+--    - First database write with minimal data
+--
+-- 2. Section Completions (Incremental Saves)
+--    - 02_page1_student_info_filled: After name, grade, phone entered
+--    - 03_page1_academic_info_filled: After school, curriculum, grades entered
+--    - 04_page1_scholarship_info_filled: After scholarship needs entered
+--
+-- 3. Page 1 Complete (05_page1_complete)
+--    - Triggered on Page 1 form submission
+--    - All Page 1 data saved including lead categorization
+--
+-- 4. Lead Evaluation (06_lead_evaluated)
+--    - Only for qualified leads after evaluation animation
+--
+-- 5. Page 2 View (07_page_2_view)
+--    - When user reaches Page 2 (qualified or disqualified)
+--
+-- 6. Counseling Slot Selected (08_page_2_counselling_slot_selected)
+--    - Only for qualified leads after date/time selection
+--
+-- 7. Parent Details Filled (09_page_2_parent_details_filled)
+--    - When parent name and email entered
+--
+-- 8. Form Complete (10_form_submit)
+--    - Final submission with all data
+--    - Triggers auto_assign_new_lead() function via AFTER INSERT trigger
+--
+-- All saves use: supabase.rpc('upsert_form_session', { p_session_id, p_form_data })
+-- Fallback: Direct upsert to form_sessions table if RPC fails
