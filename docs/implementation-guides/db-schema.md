@@ -1,8 +1,8 @@
 -- =============================================================================
--- BEACON HOUSE FORM SESSIONS - COMPLETE DATABASE SCHEMA
+-- FORM_SESSIONS TABLE - COMPLETE SCHEMA
 -- =============================================================================
--- Copy and paste this entire file into your Supabase SQL editor to replicate
--- the form_sessions table with all triggers, functions, RLS policies, and indexes
+-- Everything needed to replicate the form_sessions table exactly
+-- Copy and paste this entire file into your Supabase SQL editor
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -262,172 +262,104 @@ END;
 $function$;
 
 -- -----------------------------------------------------------------------------
--- 7. CREATE FUNCTION: auto_assign_new_lead()
+-- 7. CREATE TRIGGER: update_form_sessions_timestamp
 -- -----------------------------------------------------------------------------
--- Purpose: Automatically creates CRM leads and assigns counselors on new form submissions
--- Trigger: AFTER INSERT on form_sessions
--- Logic:
---   - Creates crm_leads entry for all new form submissions
---   - Assigns 'bch' category leads to vishy@beaconhouse.com
---   - Assigns 'lum-l1' and 'lum-l2' category leads to karthik@beaconhouse.com
---   - Leaves other categories unassigned
---   - Creates audit comment in crm_comments
--- Note: Requires counselors and crm_leads tables to exist
+-- Purpose: Auto-update updated_at timestamp on every UPDATE to form_sessions
 
-CREATE OR REPLACE FUNCTION public.auto_assign_new_lead()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $function$
-DECLARE
-    v_system_counselor_id uuid := '00000000-0000-0000-0000-000000000000';
-    v_assigned_counselor_id uuid;
-    v_crm_lead_exists boolean := FALSE;
-    v_counselor_name text;
-BEGIN
-    IF TG_OP != 'INSERT' THEN
-        RETURN NEW;
-    END IF;
-
-    RAISE NOTICE 'Auto-assignment triggered for session_id: % (lead_category: %, is_qualified: %)',
-        NEW.session_id, NEW.lead_category, NEW.is_qualified_lead;
-
-    SELECT EXISTS (
-        SELECT 1 FROM public.crm_leads
-        WHERE session_id = NEW.session_id
-    ) INTO v_crm_lead_exists;
-
-    IF NOT v_crm_lead_exists THEN
-        IF NEW.lead_category = 'bch' THEN
-            SELECT id INTO v_assigned_counselor_id FROM public.counselors WHERE email = 'vishy@beaconhouse.com';
-        ELSIF NEW.lead_category IN ('lum-l1', 'lum-l2') THEN
-            SELECT id INTO v_assigned_counselor_id FROM public.counselors WHERE email = 'karthik@beaconhouse.com';
-        ELSE
-            v_assigned_counselor_id := NULL;
-        END IF;
-
-        INSERT INTO public.crm_leads (
-            session_id,
-            lead_status,
-            assigned_to,
-            created_at,
-            updated_at
-        ) VALUES (
-            NEW.session_id,
-            '01_yet_to_contact',
-            v_assigned_counselor_id,
-            now(),
-            now()
-        );
-
-        RAISE NOTICE 'Created crm_leads entry for lead: % (category: %, assigned: %)',
-            NEW.session_id, NEW.lead_category,
-            CASE WHEN v_assigned_counselor_id IS NOT NULL THEN 'Yes' ELSE 'No' END;
-    ELSE
-        RAISE NOTICE 'crm_leads entry already exists for session: %', NEW.session_id;
-    END IF;
-
-    IF v_assigned_counselor_id IS NOT NULL THEN
-        SELECT name INTO v_counselor_name FROM public.counselors WHERE id = v_assigned_counselor_id;
-
-        INSERT INTO public.crm_comments (
-            session_id,
-            counselor_id,
-            comment_text,
-            lead_status_at_comment,
-            created_at
-        ) VALUES (
-            NEW.session_id,
-            v_system_counselor_id,
-            format('Auto-assigned to %s (Category: %s, Qualified: %s)',
-                v_counselor_name,
-                COALESCE(NEW.lead_category, 'Unknown'),
-                CASE WHEN NEW.is_qualified_lead THEN 'Yes' ELSE 'No' END
-            ),
-            '01_yet_to_contact',
-            now()
-        );
-    ELSE
-        INSERT INTO public.crm_comments (
-            session_id,
-            counselor_id,
-            comment_text,
-            lead_status_at_comment,
-            created_at
-        ) VALUES (
-            NEW.session_id,
-            v_system_counselor_id,
-            format('Lead added to CRM as unassigned (Category: %s, Qualified: %s)',
-                COALESCE(NEW.lead_category, 'Unknown'),
-                CASE WHEN NEW.is_qualified_lead THEN 'Yes' ELSE 'No' END
-            ),
-            '01_yet_to_contact',
-            now()
-        );
-    END IF;
-
-    RETURN NEW;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE WARNING 'Auto-assignment failed for session %: % %', NEW.session_id, SQLSTATE, SQLERRM;
-        RETURN NEW;
-END;
-$function$;
-
--- -----------------------------------------------------------------------------
--- 8. CREATE TRIGGERS (2 triggers)
--- -----------------------------------------------------------------------------
-
--- Trigger 1: Auto-update updated_at timestamp on every UPDATE
 CREATE TRIGGER update_form_sessions_timestamp
 BEFORE UPDATE ON public.form_sessions
 FOR EACH ROW
 EXECUTE FUNCTION public.update_timestamp();
 
--- Trigger 2: Auto-assign new leads to counselors on INSERT
--- Note: This trigger requires counselors, crm_leads, and crm_comments tables
--- If those tables don't exist, this trigger will fail silently due to exception handling
-CREATE TRIGGER trigger_auto_assign_new_lead
-AFTER INSERT ON public.form_sessions
-FOR EACH ROW
-EXECUTE FUNCTION public.auto_assign_new_lead();
-
 -- =============================================================================
 -- END OF SCHEMA
 -- =============================================================================
 
--- WHEN DATABASE WRITES HAPPEN (Frontend Form Flow):
+-- =============================================================================
+-- WHEN DATABASE WRITES HAPPEN (Frontend Form Flow)
+-- =============================================================================
+--
+-- All database writes to form_sessions happen via:
+--   supabase.rpc('upsert_form_session', { p_session_id, p_form_data })
+--
+-- Fallback if RPC fails:
+--   supabase.from('form_sessions').upsert([data], { onConflict: 'session_id' })
+--
+-- Write Trigger Points:
 --
 -- 1. Form Start (01_form_start)
---    - Triggered when form component mounts
---    - Creates initial session_id using crypto.randomUUID()
---    - First database write with minimal data
+--    When: Form component mounts and loads
+--    File: src/components/FormPage.tsx
+--    Data: session_id, environment, utm_params
 --
--- 2. Section Completions (Incremental Saves)
---    - 02_page1_student_info_filled: After name, grade, phone entered
---    - 03_page1_academic_info_filled: After school, curriculum, grades entered
---    - 04_page1_scholarship_info_filled: After scholarship needs entered
+-- 2. Student Info Section (02_page1_student_info_filled)
+--    When: After name, grade, phone entered
+--    File: src/components/forms/InitialLeadCaptureForm.tsx
+--    Data: form_filler_type, student_name, current_grade, phone_number, location
 --
--- 3. Page 1 Complete (05_page1_complete)
---    - Triggered on Page 1 form submission
---    - All Page 1 data saved including lead categorization
+-- 3. Academic Info Section (03_page1_academic_info_filled)
+--    When: After school, curriculum, grades entered
+--    File: src/components/forms/InitialLeadCaptureForm.tsx
+--    Data: school_name, curriculum_type, grade_format, gpa_value/percentage_value
 --
--- 4. Lead Evaluation (06_lead_evaluated)
---    - Only for qualified leads after evaluation animation
+-- 4. Scholarship Info Section (04_page1_scholarship_info_filled)
+--    When: After scholarship needs and target countries entered
+--    File: src/components/forms/InitialLeadCaptureForm.tsx
+--    Data: scholarship_requirement, target_geographies
 --
--- 5. Page 2 View (07_page_2_view)
---    - When user reaches Page 2 (qualified or disqualified)
+-- 5. Page 1 Complete (05_page1_complete)
+--    When: Page 1 form validation passes and user clicks "Next"
+--    File: src/components/forms/InitialLeadCaptureForm.tsx
+--    Data: All Page 1 fields + lead_category, is_qualified_lead, page_completed=1
 --
--- 6. Counseling Slot Selected (08_page_2_counselling_slot_selected)
---    - Only for qualified leads after date/time selection
+-- 6. Lead Evaluated (06_lead_evaluated)
+--    When: Evaluation animation completes (qualified leads only)
+--    File: src/components/forms/FormContainer.tsx
+--    Data: funnel_stage updated to '06_lead_evaluated'
 --
--- 7. Parent Details Filled (09_page_2_parent_details_filled)
---    - When parent name and email entered
+-- 7. Page 2 View (07_page_2_view)
+--    When: User reaches Page 2 (qualified or disqualified)
+--    File: src/components/forms/FormContainer.tsx
+--    Data: funnel_stage updated to '07_page_2_view', page_completed=2
 --
--- 8. Form Complete (10_form_submit)
---    - Final submission with all data
---    - Triggers auto_assign_new_lead() function via AFTER INSERT trigger
+-- 8. Counseling Slot Selected (08_page_2_counselling_slot_selected)
+--    When: Date and time slot selected (qualified leads only)
+--    File: src/components/forms/QualifiedLeadForm.tsx
+--    Data: selected_date, selected_slot, is_counselling_booked=true
 --
--- All saves use: supabase.rpc('upsert_form_session', { p_session_id, p_form_data })
--- Fallback: Direct upsert to form_sessions table if RPC fails
+-- 9. Parent Details Filled (09_page_2_parent_details_filled)
+--    When: Parent name and email entered
+--    File: src/components/forms/QualifiedLeadForm.tsx or DisqualifiedLeadForm.tsx
+--    Data: parent_name, parent_email
+--
+-- 10. Form Submit (10_form_submit)
+--     When: Final form submission (all validation passed)
+--     File: src/components/forms/FormContainer.tsx
+--     Data: All fields complete, funnel_stage='10_form_submit'
+--
+-- =============================================================================
+-- DATA FLOW LOGIC
+-- =============================================================================
+--
+-- Session ID Generation:
+--   - Generated on form load: crypto.randomUUID()
+--   - Stored in browser: useFormStore (Zustand)
+--   - Unique constraint: session_id column
+--
+-- Lead Categorization Logic (src/lib/leadCategorization.ts):
+--   - Happens after Page 1 completion
+--   - Categories: 'bch', 'lum-l1', 'lum-l2', 'nurture', 'masters', 'drop'
+--   - Qualified leads: 'bch', 'lum-l1', 'lum-l2' (get counseling booking)
+--   - Disqualified leads: 'nurture', 'masters', 'drop' (contact form only)
+--
+-- Upsert Logic:
+--   - Uses COALESCE to preserve existing non-null values
+--   - New values only update if not null
+--   - updated_at automatically set by trigger
+--
+-- Field Name Conversion:
+--   - Frontend: camelCase (formFillerType, studentName, etc.)
+--   - Database: snake_case (form_filler_type, student_name, etc.)
+--   - Conversion happens in: src/lib/formTracking.ts (saveFormDataIncremental)
+--
+-- =============================================================================
