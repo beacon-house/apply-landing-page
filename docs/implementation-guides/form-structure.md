@@ -487,6 +487,160 @@ When validation fails, focus first error field in this order:
 
 ---
 
+## Database Write Logic for form_sessions Table
+
+### Field Population Types
+
+**1. Direct Form Fields** (written as-is from form inputs):
+- `student_name`, `current_grade`, `location`, `phone_number`
+- `curriculum_type`, `grade_format`, `gpa_value`, `percentage_value`, `school_name`
+- `scholarship_requirement`, `target_geographies`
+- `parent_name`, `parent_email`
+- `selected_date`, `selected_slot`
+- `form_filler_type`
+
+**2. System-Generated Fields** (computed before writing):
+- `funnel_stage`, `lead_category`, `is_qualified_lead`, `is_counselling_booked`
+- `page_completed`, `triggered_events`
+- `session_id`, `environment`
+- `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`
+
+---
+
+### Computed Field Logic
+
+#### 1. lead_category
+**File:** `src/lib/leadCategorization.ts`
+**Function:** `categorizeLeadByProgram()`
+**When:** After Page 1 submission, before navigation
+**Values:** `'bch'` | `'lum-l1'` | `'lum-l2'` | `'nurture'` | `'masters'` | `'drop'`
+
+**Logic:**
+- Evaluates form data against hierarchical rules
+- Override rules checked first (student form filler, spam detection, full scholarship)
+- Then qualified lead rules (BCH, LUM-L1, LUM-L2)
+- Fallback to 'nurture' if no match
+- See "Lead Categorization Rules" section above for full logic
+
+#### 2. is_qualified_lead
+**File:** `src/components/forms/InitialLeadCaptureForm.tsx`
+**When:** Set during Page 1 submission
+**Values:** `true` | `false`
+
+**Logic:**
+```javascript
+is_qualified_lead = lead_category === 'bch' ||
+                    lead_category === 'lum-l1' ||
+                    lead_category === 'lum-l2'
+```
+
+#### 3. funnel_stage
+**File:** `src/lib/formTracking.ts` (via analytics events)
+**When:** Updated at each major step
+**Values:** String stages from `'01_form_start'` to `'10_form_submit'`
+
+**Logic:**
+- `'01_form_start'` - Set when form mounts (FormPage.tsx)
+- `'02_page1_student_info_filled'` - After student info section filled
+- `'03_page1_academic_info_filled'` - After academic info section filled
+- `'04_page1_scholarship_info_filled'` - After scholarship section filled
+- `'05_page1_complete'` - After Page 1 validation passes
+- `'06_lead_evaluated'` - After evaluation animation (qualified only)
+- `'07_page_2_view'` - When Page 2 loads
+- `'08_page_2_counselling_slot_selected'` - When date/time selected (qualified only)
+- `'09_page_2_parent_details_filled'` - After parent fields filled
+- `'10_form_submit'` - Final submission
+
+**Updated via:** `saveFormDataIncremental()` function in formTracking.ts
+
+#### 4. is_counselling_booked
+**File:** `src/components/forms/QualifiedLeadForm.tsx`
+**When:** When date and time slot are both selected (Page 2A only)
+**Values:** `true` | `false` (default: false)
+
+**Logic:**
+```javascript
+is_counselling_booked = selectedDate !== '' && selectedSlot !== ''
+```
+
+#### 5. page_completed
+**File:** `src/lib/formTracking.ts`
+**When:** Updated at navigation points
+**Values:** `1` | `2`
+
+**Logic:**
+- Set to `1` when Page 1 completes
+- Set to `2` when navigating to Page 2 (any variant)
+
+#### 6. triggered_events
+**File:** `src/lib/analytics.ts` & `src/lib/formTracking.ts`
+**When:** Updated each time an event is tracked
+**Values:** JSONB array of event names
+
+**Logic:**
+- Array appends each funnel_stage as it occurs
+- Example: `['01_form_start', '02_page1_student_info_filled', '05_page1_complete']`
+- Used to track user journey and prevent duplicate event firing
+
+#### 7. session_id
+**File:** `src/store/formStore.ts`
+**Function:** `initializeSession()`
+**When:** Form component mounts (once per user session)
+**Values:** UUID string
+
+**Logic:**
+```javascript
+session_id = crypto.randomUUID()
+```
+
+#### 8. environment
+**File:** `src/lib/formTracking.ts`
+**When:** Set on every database write
+**Values:** `'development'` | `'production'`
+
+**Logic:**
+```javascript
+environment = import.meta.env.MODE
+```
+
+#### 9. UTM Parameters
+**File:** `src/lib/utm.ts`
+**Function:** `extractUtmParams()`
+**When:** Captured on form load from URL query string
+**Values:** String values from URL params
+
+**Logic:**
+- Reads from URL: `?utm_source=google&utm_medium=cpc&...`
+- Extracts: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`
+- Stored in Zustand: `useFormStore.getState().utmParams`
+- Written to DB on first save
+
+---
+
+### Database Write Flow
+
+**Primary Function:** `saveFormDataIncremental()`
+**Location:** `src/lib/formTracking.ts`
+
+**Process:**
+1. Get current form data from Zustand store
+2. Get session_id and environment
+3. Convert camelCase fields to snake_case
+4. Compute derived fields (if needed):
+   - `lead_category` (if Page 1 complete)
+   - `is_qualified_lead` (based on lead_category)
+   - `is_counselling_booked` (if date/time selected)
+5. Add current funnel_stage to triggered_events array
+6. Call `supabase.rpc('upsert_form_session', { p_session_id, p_form_data })`
+7. Fallback to direct upsert if RPC fails
+
+**COALESCE Behavior:**
+- Database function uses COALESCE to preserve existing non-null values
+- New values only overwrite if they are non-null
+- Allows incremental saves without data loss
+
+---
+
 **END OF FORM STRUCTURE DOCUMENTATION**
 
-This provides a complete reference for form fields, validation, and branching logic.
+This provides a complete reference for form fields, validation, branching logic, and database write logic.
