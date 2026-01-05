@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { initializeAnalytics } from '@/lib/analytics';
 import { initializeMetaPixel } from '@/lib/metaPixelEvents';
 import { getUtmParametersFromUrl } from '@/lib/utm';
+import { fetchClientIpAddress } from '@/lib/clientInfo';
 import { useFormStore } from '@/store/formStore';
 import LandingPage from './components/LandingPage';
 import FormPage from './components/FormPage';
@@ -18,11 +19,20 @@ function App() {
   const { setUtmParameters } = useFormStore();
   
   React.useEffect(() => {
+    // Initialize session early
+    const formState = useFormStore.getState();
+    if (!formState.sessionId) {
+      // Session is already initialized in store, but ensure it exists
+    }
+    
     // Initialize Google Analytics
     initializeAnalytics();
     
     // Initialize Meta Pixel
     initializeMetaPixel();
+    
+    // Fetch client IP asynchronously (non-blocking)
+    fetchClientIpAddress().catch(() => {});
     
     // Extract and set UTM parameters
     const utm = getUtmParametersFromUrl();

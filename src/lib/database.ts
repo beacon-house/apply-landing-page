@@ -35,6 +35,14 @@ const getSupabaseClient = (): SupabaseClient => {
     throw new Error('Please configure your actual Supabase anon key in VITE_SUPABASE_ANON_KEY');
   }
   
+  // Validate key format (supports both legacy anon keys and new publishable keys)
+  const isLegacyKey = supabaseAnonKey.startsWith('eyJ');
+  const isPublishableKey = supabaseAnonKey.startsWith('sb_publishable_');
+  
+  if (!isLegacyKey && !isPublishableKey) {
+    debugLog('⚠️ API key format warning: Key does not match expected format (legacy anon or publishable key)');
+  }
+  
   return createClient(supabaseUrl, supabaseAnonKey);
 };
 

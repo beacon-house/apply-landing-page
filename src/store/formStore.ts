@@ -24,6 +24,7 @@ interface FormState {
   sessionId: string;
   triggeredEvents: string[];
   utmParameters: UtmParameters;
+  eventCounter: number;
   setStep: (step: number) => void;
   updateFormData: (data: Partial<CompleteFormData>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
@@ -34,6 +35,7 @@ interface FormState {
   resetForm: () => void;
   canProceed: (step: number) => boolean;
   getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[]; utmParameters: UtmParameters };
+  incrementEventCounter: () => number;
 }
 
 export const useFormStore = create<FormState>((set, get) => ({
@@ -45,6 +47,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   sessionId: generateSessionId(),
   triggeredEvents: [],
   utmParameters: {},
+  eventCounter: 0,
   
   setStep: (step) => {
     set({ currentStep: step });
@@ -84,8 +87,15 @@ export const useFormStore = create<FormState>((set, get) => ({
     startTime: Date.now(),
     sessionId: generateSessionId(),
     triggeredEvents: [],
-    utmParameters: {}
+    utmParameters: {},
+    eventCounter: 0
   }),
+  
+  incrementEventCounter: () => {
+    const current = get().eventCounter;
+    set({ eventCounter: current + 1 });
+    return current + 1;
+  },
   
   canProceed: (step) => {
     try {
