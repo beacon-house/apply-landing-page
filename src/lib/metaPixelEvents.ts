@@ -221,19 +221,20 @@ const trackMetaPixelEvent = (eventName: string, parameters?: Record<string, any>
   const fullEventName = `${eventName}_${envSuffix}`;
   
   try {
-    // Console logging for staging environment
-    if (envSuffix === 'stg') {
-      debugLog('🎯 Meta Pixel Event Fired:', {
-        eventName: fullEventName,
-        parameters: parameters || {},
-        timestamp: new Date().toISOString()
-      });
-    }
-
     const formState = useFormStore.getState();
     const sessionId = formState.sessionId;
     const counter = formState.incrementEventCounter();
     const eventId = sessionId ? generateEventId(sessionId, fullEventName, counter) : undefined;
+
+    // Console logging for staging environment
+    if (envSuffix === 'stg') {
+      debugLog('🎯 Meta Pixel Event Fired:', {
+        eventName: fullEventName,
+        eventId: eventId || 'N/A',
+        parameters: parameters || {},
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Build user data from form data if parameters provided
     const userData = parameters ? buildMetaUserData(parameters as Partial<CompleteFormData>) : buildMetaUserData({});
