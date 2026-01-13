@@ -46,7 +46,7 @@ CBSE, ICSE, and State_Boards have stricter qualification rules:
 ### Key Files
 - `src/lib/leadCategorization.ts` - Business rules for lead qualification
 - `src/lib/formTracking.ts` - Incremental form data persistence via Supabase RPC
-- `src/lib/metaPixelEvents.ts` - Analytics event tracking (35+ custom events)
+- `src/lib/metaPixelEvents.ts` - Analytics event tracking (37+ custom events)
 - `src/store/formStore.ts` - Zustand store with session management
 - `src/schemas/form.ts` - Zod validation schemas
 

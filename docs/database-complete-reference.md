@@ -1038,7 +1038,7 @@ await saveFormDataIncremental(sessionId, pageNumber, funnelStage, completeSave)
 ### Overview
 Event tracking for Facebook/Instagram ad optimization using custom Meta Pixel events.
 
-**Total Events:** 35 custom events
+**Total Events:** 37 custom events
 **Scope:** Form-related events only
 **Purpose:** Enable advanced targeting, retargeting, and conversion optimization
 
@@ -1130,6 +1130,18 @@ const fullEventName = `${eventName}_${getEnvironmentSuffix()}`
 - apply_qualfd_stdnt_page_2_view
 - apply_qualfd_stdnt_page_2_submit
 - apply_qualfd_stdnt_form_complete
+
+#### Category 6: Enrichment Events (2 events)
+**Purpose:** Send user data to Meta as soon as it becomes available, improving Event Match Quality even if users abandon the form before submitting.
+
+**Events:**
+- **apply_phone_captured** - Fires when user enters valid 10-digit phone and moves to next field (Page 1)
+  - Includes: phone, countryCode, location (if filled)
+- **apply_email_captured** - Fires when user enters valid email and moves to next field (Page 2)
+  - Includes: email, parentName (if filled), phone from Page 1
+
+**Trigger:** Field blur (when user leaves the field) with valid data
+**Fires:** Once per session (prevents duplicate events if user edits)
 
 ### Event Storage & Retrieval
 
