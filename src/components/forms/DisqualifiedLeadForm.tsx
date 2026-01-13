@@ -36,6 +36,7 @@ import { trackFormSection } from '@/lib/formTracking';
 import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
+import { fireEmailCapturedEvent } from '@/lib/metaPixelEvents';
 
 // Define the correct field order for validation error focusing
 const FIELD_ORDER: (keyof DisqualifiedLeadData)[] = [
@@ -54,12 +55,14 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
   const { sessionId, formData: storeFormData, triggeredEvents } = useFormStore();
   const [showStickyButton, setShowStickyButton] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [hasEmailCaptureEventFired, setHasEmailCaptureEventFired] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch
+    watch,
+    getValues
   } = useForm<DisqualifiedLeadData>({
     resolver: zodResolver(disqualifiedLeadSchema),
     defaultValues
@@ -90,6 +93,27 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
       });
     }
   }, [parentName, email, leadCategory, sessionId]);
+
+  // Fire email captured event when user leaves email field with valid data
+  const handleEmailBlur = () => {
+    const emailValue = getValues('email');
+    const parentNameValue = getValues('parentName');
+
+    // Validate email format
+    const isValidEmail = emailValue?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+
+    if (isValidEmail && !hasEmailCaptureEventFired) {
+      fireEmailCapturedEvent({
+        email: emailValue,
+        parentName: parentNameValue || undefined,
+        // Include phone from store (collected on Page 1)
+        phoneNumber: storeFormData.phoneNumber,
+        countryCode: storeFormData.countryCode
+      });
+      setHasEmailCaptureEventFired(true);
+      debugLog('📧 Email captured event fired:', { email: emailValue, parentName: parentNameValue });
+    }
+  };
 
   // Check if form is ready for submission
   const isFormReady = parentName && email;
@@ -247,6 +271,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
                   id="email"
                   type="email"
                   {...register('email')}
+                  onBlur={handleEmailBlur}
                   className={cn(
                     "h-12 bg-white",
                     errors.email ? 'border-red-500 focus:border-red-500' : ''

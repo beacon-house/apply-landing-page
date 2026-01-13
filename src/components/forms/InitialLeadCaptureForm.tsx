@@ -42,6 +42,7 @@ import { trackFormSection } from '@/lib/formTracking';
 import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
+import { firePhoneCapturedEvent } from '@/lib/metaPixelEvents';
 
 interface InitialLeadCaptureFormProps {
   onSubmit: (data: InitialLeadCaptureData) => void;
@@ -74,6 +75,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   ({ onSubmit, defaultValues }, ref) => {
   const [showStickyButton, setShowStickyButton] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [hasPhoneCaptureEventFired, setHasPhoneCaptureEventFired] = React.useState(false);
   const { sessionId, formData: storeFormData, triggeredEvents } = useFormStore();
   
   const {
@@ -83,6 +85,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
     control,
     setValue,
     watch,
+    getValues,
     clearErrors,
     setFocus: reactHookFormSetFocus,
   } = useForm<InitialLeadCaptureData>({
@@ -125,6 +128,24 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
       focusField(fieldName);
     }
   }), []);
+
+  // Fire phone captured event when user leaves phone field with valid data
+  const handlePhoneBlur = () => {
+    const phoneValue = getValues('phoneNumber');
+    const countryCode = getValues('countryCode');
+    const location = getValues('location');
+
+    // Only fire if valid 10-digit phone and event hasn't fired yet
+    if (phoneValue?.match(/^[0-9]{10}$/) && !hasPhoneCaptureEventFired) {
+      firePhoneCapturedEvent({
+        phoneNumber: phoneValue,
+        countryCode: countryCode || '+91',
+        location: location || undefined
+      });
+      setHasPhoneCaptureEventFired(true);
+      debugLog('📱 Phone captured event fired:', { phoneNumber: phoneValue, countryCode, location });
+    }
+  };
 
   // Enhanced form submission handler with proper error handling
   const handleFormSubmit = async (e?: React.FormEvent) => {
@@ -445,6 +466,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
                   id="phoneNumber"
                   type="tel"
                   {...register('phoneNumber')}
+                  onBlur={handlePhoneBlur}
                   className={cn(
                     "h-12 bg-white",
                     errors.phoneNumber ? 'border-red-500 focus:border-red-500' : ''

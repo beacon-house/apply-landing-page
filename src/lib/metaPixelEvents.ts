@@ -497,6 +497,26 @@ export const fireFormProgressionEvents = (
   return allFiredEvents;
 };
 
+// ENRICHMENT EVENTS - Fire as soon as user data becomes available
+export const firePhoneCapturedEvent = (data: {
+  phoneNumber: string;
+  countryCode: string;
+  location?: string;
+}): string[] => {
+  trackMetaPixelEvent('apply_phone_captured', data);
+  return ['apply_phone_captured'];
+};
+
+export const fireEmailCapturedEvent = (data: {
+  email: string;
+  parentName?: string;
+  phoneNumber?: string;
+  countryCode?: string;
+}): string[] => {
+  trackMetaPixelEvent('apply_email_captured', data);
+  return ['apply_email_captured'];
+};
+
 // CTA CLICK EVENTS
 export const fireCTAClickEvent = (ctaLocation: 'hero' | 'header'): string[] => {
   if (ctaLocation === 'hero') {
