@@ -37,6 +37,12 @@ npm run preview  # Preview production build
 - **Disqualified**: Nurture (students, full scholarship), Drop (grade 7 and below), Masters → contact form only
 - **Spam detection**: GPA=10 or percentage=100 triggers spam classification
 
+### Curriculum-Based Rules (Indian Curriculums)
+CBSE, ICSE, and State_Boards have stricter qualification rules:
+- **Grades 8-10 + partial_scholarship** → `nurture` (not BCH)
+- **Grades 11-12 + optional/partial** → `bch` (bypasses Luminaire)
+- IB, IGCSE, Others keep standard logic (often high-paying international families)
+
 ### Key Files
 - `src/lib/leadCategorization.ts` - Business rules for lead qualification
 - `src/lib/formTracking.ts` - Incremental form data persistence via Supabase RPC
@@ -45,7 +51,15 @@ npm run preview  # Preview production build
 - `src/schemas/form.ts` - Zod validation schemas
 
 ### Database
-Uses `upsert_form_session` RPC function for all writes. Table: `form_sessions` with RLS enabled. See `docs/db-schema.md` for complete schema.
+Uses `upsert_form_session` RPC function for all writes. Table: `form_sessions` with RLS enabled.
+
+## Documentation (docs/)
+
+Key reference files:
+- `docs/workflow-setup-v2.1.md` - Deployment workflow, environments, Make.com integration
+- `docs/brand-guidelines.md` - Design system (colors, typography, components)
+- `docs/database-complete-reference.md` - Complete DB schema and RPC functions
+- `docs/CAPI-production-replication-guide.md` - Meta CAPI edge function deployment
 
 ## Environment Variables
 
