@@ -118,6 +118,13 @@ export default function FormContainer() {
         undefined, // extendedNurtureData not used in new logic
         data.targetGeographies
       );
+      debugLog('🏷️ Lead category determined:', leadCategory, {
+        grade: data.currentGrade,
+        filler: data.formFillerType,
+        scholarship: data.scholarshipRequirement,
+        curriculum: data.curriculumType,
+        destinations: data.targetGeographies
+      });
       updateFormData({ lead_category: leadCategory }); // Update lead category in store
       
       // Get the absolute latest state from the store after all updates

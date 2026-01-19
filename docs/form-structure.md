@@ -1,7 +1,7 @@
 # Form Structure & Branching Logic
 
-**Version:** 2.1
-**Last Updated:** 2026-01-13
+**Version:** 2.2
+**Last Updated:** 2026-01-19
 **Purpose:** Quick reference for form fields and branching logic
 
 ---
@@ -260,6 +260,27 @@ THEN return 'drop'
 IF currentGrade === 'masters'
 THEN return 'masters'
 ```
+
+**Rule 6: ROW-Only Destination → NURTURE**
+```
+IF targetGeographies.length === 1
+AND targetGeographies includes 'Rest of World'
+THEN return 'nurture'
+```
+Note: Applies when user selects ONLY "Rest of World" with no other destinations.
+
+---
+
+### Destination-Based Rules (Checked after Global Overrides)
+
+**Destination Rule 1: Non-US, Non-NeedGuidance for Grades 8-9 → NURTURE**
+```
+IF currentGrade IN ['8', '9']
+AND targetGeographies does NOT include 'US'
+AND targetGeographies does NOT include 'Need Guidance'
+THEN return 'nurture'
+```
+Note: Filters young leads not targeting US. UK-only or ROW combinations for grades 8-9 go to nurture.
 
 ---
 
