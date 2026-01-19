@@ -13,6 +13,9 @@
  *   - Grades 11-12 with optional/partial → BCH (bypasses Luminaire)
  * - IB, IGCSE, Others keep existing logic unchanged
  * - Default to nurture for all other cases
+ * - ROW-only destination override: Users selecting ONLY "Rest of World" → nurture
+ * - Non-US, Non-NeedGuidance grades 8-9 override: If US and "Need Guidance" are
+ *   not selected and grade is 8 or 9 → nurture (filters young non-US-focused leads)
  */
 
 import { LeadCategory } from '@/types/form';
@@ -76,7 +79,12 @@ export const determineLeadCategory = (
   else if (currentGrade === 'masters') {
     determinedCategory = 'masters';
   }
-  
+  // 6. ROW-only destination → nurture (global override)
+  // If user selects ONLY "Rest of World" with no other destinations
+  else if (targetGeographies?.length === 1 && targetGeographies.includes('Rest of World')) {
+    determinedCategory = 'nurture';
+  }
+
   // QUALIFIED LEADS (only for parent-filled forms that pass global overrides)
   else if (formFillerType === 'parent') {
 
@@ -88,6 +96,15 @@ export const determineLeadCategory = (
     if (isIndianCurriculum(curriculumType) &&
         ['8', '9', '10'].includes(currentGrade) &&
         scholarshipRequirement === 'partial_scholarship') {
+      determinedCategory = 'nurture';
+    }
+
+    // Non-US, Non-NeedGuidance destinations for grades 8-9 → nurture
+    // If US and "Need Guidance" are not selected, and grade is 8 or 9
+    else if (['8', '9'].includes(currentGrade) &&
+             targetGeographies &&
+             !targetGeographies.includes('US') &&
+             !targetGeographies.includes('Need Guidance')) {
       determinedCategory = 'nurture';
     }
 
