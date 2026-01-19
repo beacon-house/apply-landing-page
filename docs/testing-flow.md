@@ -3,13 +3,14 @@
 ## Instructions for Claude in Chrome
 
 1. Open browser DevTools (F12) → Console tab
-2. For each test case below:
+2. Click the hero CTA button to open the form
+3. For each test case below:
    - Fill the form with the specified values
    - Click the submit/continue button
    - Check console for log starting with `🏷️ Lead category determined:`
    - Verify the category matches expected
    - Verify the correct page loads (Page 2A = calendar booking, Page 2B = simple contact form)
-3. Report results in this format:
+4. Report results in this format:
    ```
    TC-XX: PASS/FAIL
    - Expected: [category] → [page]
