@@ -151,11 +151,25 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
         
         let isAvailable = true;
         if (!isBCH && selectedDate) {
+          // Karthik (Non-BCH): Sundays unavailable, other days 11 AM-1 PM and 4 PM-8 PM
           const dayOfWeek = selectedDate.getDay();
           if (dayOfWeek === 0) { // Sunday for Karthik
             isAvailable = false;
           } else {
             isAvailable = (hour >= 11 && hour < 14) || (hour >= 16 && hour <= 20);
+          }
+        } else if (isBCH && selectedDate) {
+          // Viswanathan (BCH) restrictions
+          const dayOfWeek = selectedDate.getDay();
+          if (dayOfWeek === 1) {
+            // Monday: all unavailable
+            isAvailable = false;
+          } else if (dayOfWeek === 0) {
+            // Sunday: 11 AM - 3 PM only
+            isAvailable = hour >= 11 && hour <= 15;
+          } else {
+            // Tuesday-Saturday: 11 AM - 8 PM
+            isAvailable = hour >= 11;
           }
         }
         
