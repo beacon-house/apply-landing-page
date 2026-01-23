@@ -156,7 +156,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
           if (dayOfWeek === 0) { // Sunday for Karthik
             isAvailable = false;
           } else {
-            isAvailable = (hour >= 11 && hour < 14) || (hour >= 16 && hour <= 20);
+            isAvailable = (hour >= 11 && hour < 14) || (hour >= 16 && hour <= 19);
           }
         } else if (isBCH && selectedDate) {
           // Viswanathan (BCH) restrictions
@@ -168,8 +168,8 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
             // Sunday: 11 AM - 3 PM only
             isAvailable = hour >= 11 && hour <= 15;
           } else {
-            // Tuesday-Saturday: 11 AM - 8 PM
-            isAvailable = hour >= 11;
+            // Tuesday-Saturday: 11 AM - 7 PM
+            isAvailable = hour >= 11 && hour <= 19;
           }
         }
         
