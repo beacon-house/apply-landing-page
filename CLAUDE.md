@@ -1,87 +1,68 @@
-# CLAUDE.md
+# Apply Landing Page
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Lead capture for Beacon House admissions consultancy. 2-page form with lead qualification and counselor booking.
 
-## Project Overview
-
-University admissions lead capture landing page for Beacon House. Features a 2-page form flow with conditional routing based on lead qualification. Dual-save architecture: Supabase (primary) + Make.com webhook (backup to Google Sheets).
+## Stack
+React 18 + TypeScript + Vite | Tailwind | Supabase | Zustand | React Hook Form + Zod
 
 ## Commands
-
 ```bash
-npm run dev      # Start dev server on port 3000
-npm run build    # Production build to dist/
-npm run lint     # ESLint check
-npm run preview  # Preview production build
+npm run dev      # Dev server (port 3000)
+npm run build    # Production build
+npm run lint     # ESLint
 ```
 
-## Tech Stack
+## Context Docs (.context/)
 
-- React 18 + TypeScript + Vite
-- Tailwind CSS with custom design system (primary: #002F5C, accent: #FFC736)
-- Supabase (PostgreSQL with RPC functions)
-- Zustand for state management
-- React Hook Form + Zod validation
-- Radix UI primitives for accessible components
+**Load these based on task:**
 
-## Architecture
+| File | When to Load |
+|------|--------------|
+| `prd.md` | Form fields, user flows, counselor availability |
+| `lead-rules.md` | **CRITICAL** - Lead categorization logic, qualification rules |
+| `meta-events.md` | Meta Pixel events, CAPI, tracking implementation |
+| `db-schema.md` | Database columns, funnel stages, RPC functions |
+| `architecture.md` | System design, data flow, tech stack |
+| `integrations.md` | Supabase, Make.com, Meta, Netlify setup |
+| `progress.md` | What's done, in progress, recently shipped |
+| `todo.md` | Prioritized task list |
 
-### Form Flow
-1. **Page 1** (`InitialLeadCaptureForm`): Student info, academics, preferences
-2. **Evaluation**: Lead categorization determines routing
-3. **Page 2A** (`QualifiedLeadForm`): Counseling booking for qualified leads (BCH, Luminaire L1/L2)
-4. **Page 2B** (`DisqualifiedLeadForm`): Contact info only for nurture/drop/masters leads
+## Key Files
+
+| Purpose | File |
+|---------|------|
+| Lead qualification | `src/lib/leadCategorization.ts` |
+| Form persistence | `src/lib/formTracking.ts` |
+| Meta events | `src/lib/metaPixelEvents.ts` |
+| CAPI integration | `src/lib/metaCAPI.ts` |
+| Form state | `src/store/formStore.ts` |
+| Validation | `src/schemas/form.ts` |
+| Types | `src/types/form.ts` |
+| Page 1 form | `src/components/forms/InitialLeadCaptureForm.tsx` |
+| Page 2A (calendar) | `src/components/forms/QualifiedLeadForm.tsx` |
+| Page 2B (contact) | `src/components/forms/DisqualifiedLeadForm.tsx` |
+
+## Quick Reference
 
 ### Lead Categories
-- **Qualified**: BCH (grades 8-11), Luminaire L1/L2 (grades 11-12) → show counseling booking
-- **Disqualified**: Nurture (students, full scholarship), Drop (grade 7 and below), Masters → contact form only
-- **Spam detection**: GPA=10 or percentage=100 triggers spam classification
+| Category | Counselor | Page 2 |
+|----------|-----------|--------|
+| `bch` | Viswanathan | Calendar booking |
+| `lum-l1` | Karthik | Calendar booking |
+| `lum-l2` | Karthik | Calendar booking |
+| `nurture` | - | Contact form |
+| `masters` | - | Contact form |
+| `drop` | - | Immediate submit |
 
-### Curriculum-Based Rules (Indian Curriculums)
-CBSE, ICSE, and State_Boards have stricter qualification rules:
-- **Grades 8-10 + partial_scholarship** → `nurture` (not BCH)
-- **Grades 11-12 + optional/partial** → `bch` (bypasses Luminaire)
-- IB, IGCSE, Others keep standard logic (often high-paying international families)
-
-### Key Files
-- `src/lib/leadCategorization.ts` - Business rules for lead qualification
-- `src/lib/formTracking.ts` - Incremental form data persistence via Supabase RPC
-- `src/lib/metaPixelEvents.ts` - Analytics event tracking (37+ custom events)
-- `src/store/formStore.ts` - Zustand store with session management
-- `src/schemas/form.ts` - Zod validation schemas
-
-### Database
-Uses `upsert_form_session` RPC function for all writes. Table: `form_sessions` with RLS enabled.
-
-## Documentation (docs/)
-
-Key reference files:
-- `docs/workflow-setup-v2.1.md` - Deployment workflow, environments, Make.com integration
-- `docs/brand-guidelines.md` - Design system (colors, typography, components)
-- `docs/database-complete-reference.md` - Complete DB schema and RPC functions
-- `docs/CAPI-production-replication-guide.md` - Meta CAPI edge function deployment
-
-## Environment Variables
-
-Required `VITE_` prefixed variables:
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
-- `VITE_ENVIRONMENT` (prod/stg) - appended to all analytics events
-- `VITE_META_PIXEL_ID`
-- `VITE_REGISTRATION_WEBHOOK_URL`
+### Indian Curriculum Rule
+CBSE/ICSE/State_Boards have stricter rules than IB/IGCSE.
 
 ## Deployment
+- **Staging:** `staging` → staging-v2-apply-bch-in.netlify.app
+- **Production:** `main` → apply.beaconhouse.in
 
-- **Staging**: `staging` branch → staging-v2-apply-bch-in.netlify.app
-- **Production**: `main` branch → apply.beaconhouse.in
+## docs/ Folder
+Legacy documentation. May be outdated. **Trust `.context/` and code as source of truth.**
 
-Both use Netlify with branch-based auto-deploy and separate Supabase branches.
-
-## Path Alias
-
-`@` maps to `src/` (configured in vite.config.ts and tsconfig.json)
-
-## Responsive Breakpoints
-
-- `sm`: 577px (tablet)
-- `md`: 1025px (desktop)
-- `lg`: 1441px (large desktop)
+---
+**IMPORTANT:** After ANY code change, update relevant `.context/` docs.
