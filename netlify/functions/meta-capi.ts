@@ -93,13 +93,15 @@ export const handler: Handler = async (event) => {
     const metaResult = await metaResponse.json();
 
     if (!metaResponse.ok) {
-      console.error("Meta CAPI error:", metaResult);
+      console.error("Meta CAPI error:", JSON.stringify(metaResult));
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ error: "Failed to send event to Meta", details: metaResult }),
       };
     }
+
+    console.log(`Meta CAPI success: ${event_name} | event_id: ${event_id} | events_received: ${metaResult.events_received}`);
 
     return {
       statusCode: 200,
