@@ -93,16 +93,7 @@ export async function sendCAPIEvent(
   eventId: string
 ): Promise<boolean> {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !anonKey) {
-      return false;
-    }
-
-    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/meta-capi`;
-
-    const eventSourceUrl = typeof window !== 'undefined' 
+    const eventSourceUrl = typeof window !== 'undefined'
       ? sanitizeEventSourceUrl(window.location.href)
       : undefined;
 
@@ -114,11 +105,10 @@ export async function sendCAPIEvent(
       event_source_url: eventSourceUrl
     };
 
-    const response = await fetch(edgeFunctionUrl, {
+    const response = await fetch('/.netlify/functions/meta-capi', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`
       },
       body: JSON.stringify(payload)
     });
