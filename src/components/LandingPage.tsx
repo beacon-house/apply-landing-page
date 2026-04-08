@@ -81,8 +81,8 @@ export default function LandingPage() {
                   <div className="text-center">
                     <Award className="w-10 h-10 text-accent mx-auto mb-2" />
                     <div className="space-y-1">
-                      <div className="text-2xl font-bold text-primary/90 font-sans">509</div>
-                      <div className="text-xs text-gray-600">Top 30 Acceptances in 2024</div>
+                      <div className="text-2xl font-bold text-primary/90 font-sans">516</div>
+                      <div className="text-xs text-gray-600">Top 30 Acceptances in 2025</div>
                     </div>
                   </div>
                 </div>
