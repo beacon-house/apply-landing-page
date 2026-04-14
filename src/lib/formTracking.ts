@@ -42,14 +42,6 @@ export const saveFormDataIncremental = async (
   funnelStage: FunnelStage,
   formData: any
 ): Promise<void> => {
-  const client = supabase;
-  if (!client) {
-    debugLog(
-      `Incremental save skipped (no Supabase): session ${sessionId}, stage ${funnelStage}`
-    );
-    return;
-  }
-
   let dbFormData: any;
   try {
     // Determine if counseling is booked
@@ -113,7 +105,7 @@ export const saveFormDataIncremental = async (
     };
 
     // Use the simple upsert function
-    const { data, error } = await client.rpc('upsert_form_session', {
+    const { data, error } = await supabase.rpc('upsert_form_session', {
       p_form_data: dbFormData,
       p_session_id: sessionId
     });
@@ -131,7 +123,7 @@ export const saveFormDataIncremental = async (
     try {
       debugLog('🔄 Attempting fallback direct upsert for session:', sessionId);
       
-      const { data: fallbackData, error: fallbackError } = await client
+      const { data: fallbackData, error: fallbackError } = await supabase
         .from('form_sessions')
         .upsert([dbFormData], { 
           onConflict: 'session_id',
@@ -262,9 +254,6 @@ export const trackFormSubmission = async (
  * Get form data for a session (for recovery purposes)
  */
 export const getSessionData = async (sessionId: string): Promise<any> => {
-  if (!supabase) {
-    return null;
-  }
   try {
     const { data, error } = await supabase
       .from('form_sessions')
@@ -292,9 +281,6 @@ export const trackFunnelAbandonment = async (
   currentPage: number,
   timeSpent: number
 ): Promise<void> => {
-  if (!supabase) {
-    return;
-  }
   try {
     const { error } = await supabase
       .from('form_sessions')

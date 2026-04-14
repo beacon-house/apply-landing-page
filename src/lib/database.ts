@@ -1,65 +1,71 @@
 /**
  * Database Connection Utility
- *
+ * 
  * Purpose: Provides database connection and query utilities using Supabase PostgreSQL.
- * Supabase is optional: missing or placeholder env yields a null client so the app can
- * boot for local UI work without touching a database.
+ * This module handles database connections using environment variables and provides helper functions
+ * for database operations.
+ * 
+ * Changes made:
+ * - Switched from Neon to Supabase connection
+ * - Updated environment variable configuration
+ * - Maintained all existing functionality
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { debugLog, errorLog } from '@/lib/logger';
 
-const PLACEHOLDER_URL = 'https://your-project.supabase.co';
-const PLACEHOLDER_KEY = 'your-anon-key';
-
-function createSupabaseClient(): SupabaseClient | null {
+// Initialize the Supabase client
+const getSupabaseClient = (): SupabaseClient => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    debugLog(
-      'Supabase disabled: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is unset; funnel DB writes are skipped.'
-    );
-    return null;
+  
+  if (!supabaseUrl) {
+    throw new Error('VITE_SUPABASE_URL environment variable is not configured');
   }
-
-  if (supabaseUrl === PLACEHOLDER_URL || supabaseAnonKey === PLACEHOLDER_KEY) {
-    debugLog('Supabase disabled: env matches template placeholders; funnel DB writes are skipped.');
-    return null;
+  
+  if (!supabaseAnonKey) {
+    throw new Error('VITE_SUPABASE_ANON_KEY environment variable is not configured');
   }
-
+  
+  if (supabaseUrl === 'https://your-project.supabase.co') {
+    throw new Error('Please configure your actual Supabase URL in VITE_SUPABASE_URL');
+  }
+  
+  if (supabaseAnonKey === 'your-anon-key') {
+    throw new Error('Please configure your actual Supabase anon key in VITE_SUPABASE_ANON_KEY');
+  }
+  
+  // Validate key format (supports both legacy anon keys and new publishable keys)
   const isLegacyKey = supabaseAnonKey.startsWith('eyJ');
   const isPublishableKey = supabaseAnonKey.startsWith('sb_publishable_');
-
+  
   if (!isLegacyKey && !isPublishableKey) {
     debugLog('⚠️ API key format warning: Key does not match expected format (legacy anon or publishable key)');
   }
-
+  
   return createClient(supabaseUrl, supabaseAnonKey);
-}
+};
 
-/** Null when Supabase env is missing or placeholder; otherwise the shared client. */
-export const supabase: SupabaseClient | null = createSupabaseClient();
+// Get Supabase client instance
+export const supabase = getSupabaseClient();
 
 /**
  * Test database connection
  * @returns Promise<boolean> - Returns true if connection is successful
  */
 export const testDatabaseConnection = async (): Promise<boolean> => {
-  if (!supabase) {
-    return false;
-  }
   try {
-    const { error } = await supabase
+    // Simple query to test connection
+    const { data, error } = await supabase
       .from('form_sessions')
       .select('count')
       .limit(1);
-
+    
     if (error) {
       errorLog('Database connection test failed:', error);
       return false;
     }
-
+    
     debugLog('Database connection successful');
     return true;
   } catch (error) {
@@ -73,22 +79,18 @@ export const testDatabaseConnection = async (): Promise<boolean> => {
  * @returns Promise<any> - Database version and current timestamp
  */
 export const getDatabaseInfo = async () => {
-  if (!supabase) {
-    return {
-      connected: false,
-      timestamp: new Date().toISOString()
-    };
-  }
   try {
+    // Use Supabase RPC for database info
     const { data, error } = await supabase.rpc('get_database_info');
-
+    
     if (error) {
       throw error;
     }
-
+    
     return data;
   } catch (error) {
     errorLog('Failed to get database info:', error);
+    // Fallback to simple connection test
     const isConnected = await testDatabaseConnection();
     return {
       connected: isConnected,
@@ -103,15 +105,8 @@ export const getDatabaseInfo = async () => {
  */
 export const checkDatabaseHealth = async () => {
   try {
-    if (!supabase) {
-      return {
-        connected: false,
-        error: 'Supabase is not configured'
-      };
-    }
-
     const isConnected = await testDatabaseConnection();
-
+    
     if (isConnected) {
       const info = await getDatabaseInfo();
       return {
@@ -138,21 +133,16 @@ export const checkDatabaseHealth = async () => {
  * @returns Promise<any> - Insert result
  */
 export const insertFormSession = async (data: any) => {
-  if (!supabase) {
-    const err = new Error('Supabase is not configured');
-    errorLog('insertFormSession:', err.message);
-    throw err;
-  }
   try {
     const { data: result, error } = await supabase
       .from('form_sessions')
       .insert([data])
       .select();
-
+    
     if (error) {
       throw error;
     }
-
+    
     return result;
   } catch (error) {
     errorLog('Failed to insert form session:', error);
