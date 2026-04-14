@@ -1,6 +1,6 @@
 # Integrations
 
-Last updated: 2026-02-04
+Last updated: 2026-04-14
 
 ## Supabase
 
@@ -18,11 +18,9 @@ VITE_SUPABASE_ANON_KEY
 - Edge Functions for Meta CAPI
 - RLS enabled
 
-### Client Init (src/lib/database.ts)
-```typescript
-import { createClient } from '@supabase/supabase-js'
-export const supabase = createClient(url, anonKey)
-```
+### Client Init ([src/lib/database.ts](../src/lib/database.ts))
+- `export const supabase: SupabaseClient | null` — `null` when URL/key missing or still set to template placeholders; otherwise `createClient(...)`. Funnel code guards on `supabase` / skips writes.
+- Engineering log: [timeline.md](../timeline.md).
 
 ---
 
