@@ -117,12 +117,39 @@ Publish: dist/
 
 ---
 
-## Google Calendar (Planned)
+## Google Calendar (Netlify Functions)
 
 ### Purpose
-- Real-time counselor availability
-- Automatic slot blocking
-- Calendar invite creation
+- Real-time counselor availability via Google FreeBusy API
+- Slot lockout by creating counselor calendar events
+- Invite parent as attendee (configurable)
 
-### Status
-Not implemented. Currently using static slot rules in QualifiedLeadForm.tsx.
+### Runtime Endpoints
+- `/.netlify/functions/gcal-availability`
+- `/.netlify/functions/gcal-booking`
+
+### Server Configuration (Netlify env)
+```
+GOOGLE_SERVICE_ACCOUNT_EMAIL
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+GCAL_ID_BCH
+GCAL_ID_LUM
+GCAL_ADD_PARENT_AS_ATTENDEE=true|false
+```
+
+### Setup Notes
+1. Create Google Cloud service account with Calendar API enabled.
+2. Share each counselor calendar with service account email.
+3. Grant permission to create/edit events on those calendars.
+4. Put calendar IDs in `GCAL_ID_BCH` and `GCAL_ID_LUM`.
+
+### Business Rules (server-side enforced)
+- `leadCategory === bch` routes to BCH counselor calendar; all others route to LUM counselor.
+- 1-hour slots, 7-day window, 60-minute same-day buffer.
+- Day windows remain same as current business rules.
+- 2 PM slot is globally blocked for both counselors.
+
+### Event Behavior
+- Event title format: `Beacon House Consultation - {StudentName}`.
+- Booking endpoint rechecks freebusy before insert to avoid race conditions.
+- If slot is no longer free, endpoint returns `409` with `SLOT_TAKEN`.
