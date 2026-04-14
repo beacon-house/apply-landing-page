@@ -45,13 +45,19 @@ interface QualifiedLeadFormProps {
   onSubmit: (data: QualifiedLeadData) => void;
   onBack: () => void;
   leadCategory: LeadCategory;
-  defaultValues?: Partial<QualifiedLeadData>;
+  defaultValues?: Partial<QualifiedLeadData> & { studentName?: string };
 }
 
 // Define a slot interface with availability
 interface TimeSlot {
   time: string;
   available: boolean;
+}
+
+interface AvailabilitySlot {
+  label: string;
+  startIso: string;
+  endIso: string;
 }
 
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
@@ -73,9 +79,13 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarDates, setCalendarDates] = useState<Date[]>([]);
   const [isMobile, setIsMobile] = useState(false);
-  const [showStickyButton, setShowStickyButton] = useState(true);
+  const [showStickyButton] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasEmailCaptureEventFired, setHasEmailCaptureEventFired] = useState(false);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [slotErrorMessage, setSlotErrorMessage] = useState<string | null>(null);
+  const [bookingErrorMessage, setBookingErrorMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -133,62 +143,67 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
     setValue('selectedDate', formattedDate);
   }, []);
 
-  // Generate available time slots (10 AM to 8 PM, except 2 PM)
-  const getTimeSlots = () => {
-    const now = new Date();
-    const today = new Date().setHours(0, 0, 0, 0);
-    const selectedDay = selectedDate ? selectedDate.setHours(0, 0, 0, 0) : null;
-    const isToday = today === selectedDay;
-    
-    const currentHour = now.getHours();
-    const minHour = isToday ? currentHour + 2 : 10;
-    
-    const allSlots: TimeSlot[] = [];
-    for (let hour = 10; hour <= 20; hour++) {
-      if (hour !== 14) { // Skip 2 PM
-        const formattedHour = hour === 12 ? "12 PM" : (hour > 12 ? `${hour - 12} PM` : `${hour} AM`);
-        const isTooSoon = isToday && hour < minHour;
-        
-        let isAvailable = true;
-        if (!isBCH && selectedDate) {
-          // Karthik (Non-BCH): Sundays unavailable, other days 11 AM-1 PM and 4 PM-8 PM
-          const dayOfWeek = selectedDate.getDay();
-          if (dayOfWeek === 0) { // Sunday for Karthik
-            isAvailable = false;
-          } else {
-            isAvailable = (hour >= 11 && hour < 14) || (hour >= 16 && hour <= 19);
-          }
-        } else if (isBCH && selectedDate) {
-          // Viswanathan (BCH) restrictions
-          const dayOfWeek = selectedDate.getDay();
-          if (dayOfWeek === 1) {
-            // Monday: all unavailable
-            isAvailable = false;
-          } else if (dayOfWeek === 0) {
-            // Sunday: 11 AM - 3 PM only
-            isAvailable = hour >= 11 && hour <= 15;
-          } else {
-            // Tuesday-Saturday: 11 AM - 7 PM
-            isAvailable = hour >= 11 && hour <= 19;
-          }
-        }
-        
-        allSlots.push({
-          time: formattedHour,
-          available: !isTooSoon && isAvailable
-        });
-      }
-    }
-    
-    // Return only available slots
-    return allSlots.filter(slot => slot.available);
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
-  const timeSlots = getTimeSlots();
+  const fetchAvailabilitySlots = async (date: Date) => {
+    setIsLoadingSlots(true);
+    setSlotErrorMessage(null);
+    setBookingErrorMessage(null);
+
+    try {
+      const response = await fetch('/.netlify/functions/gcal-availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          leadCategory,
+          date: formatDateKey(date)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load slots: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const slots: AvailabilitySlot[] = Array.isArray(payload?.slots) ? payload.slots : [];
+      setAvailabilitySlots(slots);
+
+      if (selectedSlot && !slots.some((slot) => slot.label === selectedSlot)) {
+        setValue('selectedSlot', '');
+      }
+    } catch (error) {
+      errorLog('❌ Failed to fetch counselor availability:', error);
+      setAvailabilitySlots([]);
+      setSlotErrorMessage('Unable to load live slots right now. Please try again.');
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const timeSlots: TimeSlot[] = availabilitySlots.map((slot) => ({
+    time: slot.label,
+    available: true
+  }));
+
+  useEffect(() => {
+    if (!selectedDate) {
+      return;
+    }
+
+    void fetchAvailabilitySlots(selectedDate);
+  }, [selectedDate, leadCategory]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setValue('selectedSlot', ''); // Reset time slot when date changes
+    setBookingErrorMessage(null);
     
     if (date) {
       const formattedDate = date.toLocaleDateString('en-US', {
@@ -203,6 +218,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
 
   const handleTimeSlotSelect = (slot: string) => {
     setValue('selectedSlot', slot);
+    setBookingErrorMessage(null);
   };
 
   // Track form sections as user completes them
@@ -284,6 +300,46 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
       // Validate the form first
       const result = await handleSubmit(async (data) => {
         debugLog('✅ Page 2A form validation passed, submitting data');
+        setBookingErrorMessage(null);
+
+        if (!selectedDate) {
+          throw new Error('Selected date missing during booking.');
+        }
+
+        const matchedSlot = availabilitySlots.find((slot) => slot.label === data.selectedSlot);
+        if (!matchedSlot) {
+          setBookingErrorMessage('Selected slot is no longer available. Please choose another slot.');
+          return;
+        }
+
+        const bookingResponse = await fetch('/.netlify/functions/gcal-booking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            leadCategory,
+            date: formatDateKey(selectedDate),
+            startIso: matchedSlot.startIso,
+            endIso: matchedSlot.endIso,
+            selectedSlotLabel: matchedSlot.label,
+            studentName: defaultValues?.studentName || storeFormData.studentName,
+            parentName: data.parentName,
+            parentEmail: data.email,
+            phoneNumber: storeFormData.phoneNumber
+          })
+        });
+
+        if (bookingResponse.status === 409) {
+          setBookingErrorMessage('Slot just got booked. Please choose another slot.');
+          await fetchAvailabilitySlots(selectedDate);
+          return;
+        }
+
+        if (!bookingResponse.ok) {
+          throw new Error(`Booking failed with status ${bookingResponse.status}`);
+        }
+
         window.scrollTo(0, 0);
         await onSubmit(data);
       }, async (errors) => {
@@ -384,7 +440,10 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          void handleFormSubmit();
+        }}>
           {/* Mobile Layout */}
           {isMobile ? (
             <>
@@ -460,6 +519,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                     {errors.selectedDate && (
                       <p className="text-sm text-red-500 italic mt-2">Please select a date</p>
                     )}
+                    {slotErrorMessage && (
+                      <p className="text-sm text-red-500 italic mt-2">{slotErrorMessage}</p>
+                    )}
                   </div>
 
                   {/* Time Selection */}
@@ -468,7 +530,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                       <Label className="text-base font-medium text-gray-700 mb-3 block">
                         Choose Time <span className="text-red-500">*</span>
                       </Label>
-                      {timeSlots.length === 0 ? (
+                      {isLoadingSlots ? (
+                        <p className="text-sm text-gray-500 text-center py-4">Loading available slots...</p>
+                      ) : timeSlots.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">No slots available for this day</p>
                       ) : (
                         <Controller
@@ -495,6 +559,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                       )}
                       {errors.selectedSlot && (
                         <p className="text-sm text-red-500 italic mt-2">Please select a time slot</p>
+                      )}
+                      {bookingErrorMessage && (
+                        <p className="text-sm text-red-500 italic mt-2">{bookingErrorMessage}</p>
                       )}
                     </div>
                   )}
@@ -620,6 +687,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                     {errors.selectedDate && (
                       <p className="text-sm text-red-500 italic mt-2">Please select a date</p>
                     )}
+                    {slotErrorMessage && (
+                      <p className="text-sm text-red-500 italic mt-2">{slotErrorMessage}</p>
+                    )}
                   </div>
 
                   {/* Time Selection */}
@@ -630,6 +700,8 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                     </Label>
                     {!selectedDate ? (
                       <p className="text-sm text-gray-500 text-center py-8 bg-gray-50 rounded-lg">Please select a date first</p>
+                    ) : isLoadingSlots ? (
+                      <p className="text-sm text-gray-500 text-center py-8 bg-gray-50 rounded-lg">Loading available slots...</p>
                     ) : timeSlots.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-8 bg-gray-50 rounded-lg">No slots available</p>
                     ) : (
@@ -657,6 +729,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                     )}
                     {errors.selectedSlot && (
                       <p className="text-sm text-red-500 italic mt-2">Please select a time slot</p>
+                    )}
+                    {bookingErrorMessage && (
+                      <p className="text-sm text-red-500 italic mt-2">{bookingErrorMessage}</p>
                     )}
                   </div>
                 </div>
