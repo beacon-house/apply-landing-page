@@ -1,6 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { getCounselorPolicyForLeadCategory } from "./_counselorConfig";
-import { getAvailableSlotsForDate } from "./_slotEngine";
+import { getCandidateSlotsForDate } from "./_slotEngine";
 
 const headers = {
   "Content-Type": "application/json",
@@ -34,7 +34,7 @@ export const handler: Handler = async (event) => {
     }
 
     const policy = getCounselorPolicyForLeadCategory(leadCategory);
-    const slots = await getAvailableSlotsForDate(date, policy);
+    const slots = await getCandidateSlotsForDate(date, policy);
 
     return {
       statusCode: 200,

@@ -53,12 +53,14 @@ interface QualifiedLeadFormProps {
 interface TimeSlot {
   time: string;
   available: boolean;
+  status: "available" | "booked";
 }
 
 interface AvailabilitySlot {
   label: string;
   startIso: string;
   endIso: string;
+  status: "available" | "booked";
 }
 
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
@@ -106,8 +108,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   const email = watch('email');
   const formSelectedDate = watch('selectedDate');
 
-  // Check if form is ready for submission
-  const isFormReady = selectedSlot && parentName && email;
+  // Check if form is ready for submission — slot must be available
+  const selectedSlotAvailable = availabilitySlots.find((s) => s.label === selectedSlot)?.status === "available";
+  const isFormReady = selectedSlot && selectedSlotAvailable && parentName && email;
 
   // Check if mobile
   useEffect(() => {
@@ -160,14 +163,26 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
     const slots: AvailabilitySlot[] = [];
 
     const hourRanges: { start: number; end: number }[] = [];
+    let isOffDay = false;
 
     if (isBCH) {
-      if (dayOfWeek === 1) return []; // Monday
-      if (dayOfWeek === 0) hourRanges.push({ start: 11, end: 15 });
-      else hourRanges.push({ start: 11, end: 19 });
+      if (dayOfWeek === 1) {
+        // Monday — off day for Vishy, but show slots as all booked
+        isOffDay = true;
+        hourRanges.push({ start: 11, end: 19 });
+      } else if (dayOfWeek === 0) {
+        hourRanges.push({ start: 11, end: 15 });
+      } else {
+        hourRanges.push({ start: 11, end: 19 });
+      }
     } else {
-      if (dayOfWeek === 0) return []; // Sunday
-      hourRanges.push({ start: 11, end: 13 }, { start: 16, end: 19 });
+      if (dayOfWeek === 0) {
+        // Sunday — off day for Karthik, but show slots as all booked
+        isOffDay = true;
+        hourRanges.push({ start: 11, end: 13 }, { start: 16, end: 19 });
+      } else {
+        hourRanges.push({ start: 11, end: 13 }, { start: 16, end: 19 });
+      }
     }
 
     for (const range of hourRanges) {
@@ -182,6 +197,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
           label,
           startIso: slotStart.toISOString(),
           endIso: slotEnd.toISOString(),
+          status: isOffDay ? "booked" : "available",
         });
       }
     }
@@ -222,21 +238,28 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
       const slots: AvailabilitySlot[] = Array.isArray(payload?.slots) ? payload.slots : [];
       setAvailabilitySlots(slots);
 
-      if (slots.length === 0) {
-        // No live slots available for this day — use static fallback
+      const hasAvailableSlots = slots.some((s) => s.status === "available");
+
+      if (!hasAvailableSlots && slots.length > 0) {
+        // All slots are booked — this is fine, just show the "booked" UI
+        // No failure context needed — the user can see the schedule and pick another date
+        failureContext.failureType = 'no_slots_available';
+        failureContext.failureReason = 'All candidate slots are booked for this day';
+      } else if (slots.length === 0) {
+        // No slots at all (date out of range, etc.) — use static fallback
         const fallback = getStaticFallbackSlots(date);
         setAvailabilitySlots(fallback);
         setUsedFallbackSlots(true);
         setSlotErrorMessage("We couldn't confirm live availability for this day. Please pick your preferred time, and our team will confirm with you within a few hours.");
         failureContext.failureType = 'no_slots_available';
-        failureContext.failureReason = 'Google Calendar returned no available slots; using static fallback';
+        failureContext.failureReason = 'Google Calendar returned no candidate slots; using static fallback';
       } else {
-        // Clear any previous failure context
+        // Some slots available — clear failure context
         failureContext.failureType = null;
         failureContext.failureReason = null;
       }
 
-      if (selectedSlot && !slots.some((slot) => slot.label === selectedSlot) && !getStaticFallbackSlots(date).some((slot) => slot.label === selectedSlot)) {
+      if (selectedSlot && !slots.some((slot) => slot.label === selectedSlot && slot.status === "available")) {
         setValue('selectedSlot', '');
       }
 
@@ -258,7 +281,8 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
 
   const timeSlots: TimeSlot[] = availabilitySlots.map((slot) => ({
     time: slot.label,
-    available: true
+    available: slot.status === "available",
+    status: slot.status,
   }));
 
   useEffect(() => {
@@ -571,27 +595,35 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                       ) : timeSlots.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">No slots available for this day</p>
                       ) : (
-                        <Controller
-                          name="selectedSlot"
-                          control={control}
-                          render={({ field }) => (
-                            <Select onValueChange={(value) => {
-                              field.onChange(value);
-                              handleTimeSlotSelect(value);
-                            }} value={field.value}>
-                              <SelectTrigger className="h-12 bg-white" data-field="selectedSlot">
-                                <SelectValue placeholder="Choose a time slot" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {timeSlots.map((slot, index) => (
-                                  <SelectItem key={index} value={slot.time}>
-                                    {slot.time}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          {timeSlots.map((slot, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              disabled={slot.status === "booked"}
+                              onClick={() => {
+                                if (slot.status === "available") {
+                                  setValue('selectedSlot', slot.time);
+                                  handleTimeSlotSelect(slot.time);
+                                }
+                              }}
+                              className={cn(
+                                "p-2 rounded-lg border-2 text-xs font-medium transition-all relative",
+                                slot.status === "booked"
+                                  ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                  : selectedSlot === slot.time
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              )}
+                              data-field="selectedSlot"
+                            >
+                              {slot.time}
+                              {slot.status === "booked" && (
+                                <span className="block text-[10px] text-gray-300 font-normal mt-0.5">Booked</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       )}
                       {errors.selectedSlot && (
                         <p className="text-sm text-red-500 italic mt-2">Please select a time slot</p>
@@ -743,19 +775,27 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
                           <button
                             key={index}
                             type="button"
+                            disabled={slot.status === "booked"}
                             onClick={() => {
-                              setValue('selectedSlot', slot.time);
-                              handleTimeSlotSelect(slot.time);
+                              if (slot.status === "available") {
+                                setValue('selectedSlot', slot.time);
+                                handleTimeSlotSelect(slot.time);
+                              }
                             }}
                             className={cn(
-                              "p-2 rounded-lg border-2 text-xs font-medium transition-all",
-                              selectedSlot === slot.time
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              "p-2 rounded-lg border-2 text-xs font-medium transition-all relative",
+                              slot.status === "booked"
+                                ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                : selectedSlot === slot.time
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             )}
                             data-field="selectedSlot"
                           >
                             {slot.time}
+                            {slot.status === "booked" && (
+                              <span className="block text-[10px] text-gray-300 font-normal mt-0.5">Booked</span>
+                            )}
                           </button>
                         ))}
                       </div>

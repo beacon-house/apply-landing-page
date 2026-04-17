@@ -32,10 +32,14 @@ const getDateDiffFromNowInTimezoneDays = (dateKey: string, timezone: string): nu
   return Math.round((targetUtc.getTime() - nowUtc.getTime()) / 86_400_000);
 };
 
+const DEFAULT_WEEKDAY_WINDOWS: { startHour: number; endHour: number }[] = [
+  { startHour: 11, endHour: 19 },
+];
+
 const buildCandidateSlots = (
   dateKey: string,
   policy: CounselorPolicy
-): Array<{ start: Date; end: Date; label: string }> => {
+): Array<{ start: Date; end: Date; label: string; isOffDay: boolean }> => {
   const weekdayIndex = getWeekdayIndexInTimeZone(dateKey, policy.timezone) as
     | 0
     | 1
@@ -44,7 +48,15 @@ const buildCandidateSlots = (
     | 4
     | 5
     | 6;
-  const dayWindows = policy.windowsByWeekday[weekdayIndex] ?? [];
+  let dayWindows = policy.windowsByWeekday[weekdayIndex] ?? [];
+  const isOffDay = dayWindows.length === 0;
+
+  // On off-days (e.g., Monday for BCH), generate default weekday slots
+  // so we can show them all as "booked" in the UI
+  if (isOffDay) {
+    dayWindows = DEFAULT_WEEKDAY_WINDOWS;
+  }
+
   const nowWithBuffer = new Date(Date.now() + policy.sameDayBufferMinutes * 60 * 1000);
   const todayInTz = new Intl.DateTimeFormat("en-CA", {
     timeZone: policy.timezone,
@@ -54,7 +66,7 @@ const buildCandidateSlots = (
   }).format(new Date());
   const isTodayInCounselorTz = todayInTz === dateKey;
 
-  const candidates: Array<{ start: Date; end: Date; label: string }> = [];
+  const candidates: Array<{ start: Date; end: Date; label: string; isOffDay: boolean }> = [];
 
   for (const window of dayWindows) {
     for (let hour = window.startHour; hour <= window.endHour; hour += 1) {
@@ -73,6 +85,7 @@ const buildCandidateSlots = (
         start: slotStart,
         end: slotEnd,
         label: formatHourLabel(slotStart, policy.timezone),
+        isOffDay,
       });
     }
   }
@@ -80,7 +93,7 @@ const buildCandidateSlots = (
   return candidates;
 };
 
-export const getAvailableSlotsForDate = async (
+export const getCandidateSlotsForDate = async (
   dateKey: string,
   policy: CounselorPolicy
 ): Promise<SlotInterval[]> => {
@@ -96,6 +109,17 @@ export const getAvailableSlotsForDate = async (
   const candidateSlots = buildCandidateSlots(dateKey, policy);
   if (candidateSlots.length === 0) {
     return [];
+  }
+
+  // Off-day slots (e.g., Monday for BCH) are all shown as booked
+  const isOffDay = candidateSlots[0]?.isOffDay;
+  if (isOffDay) {
+    return candidateSlots.map((slot) => ({
+      startIso: slot.start.toISOString(),
+      endIso: slot.end.toISOString(),
+      label: slot.label,
+      status: "booked" as const,
+    }));
   }
 
   const calendar = getCalendarClient();
@@ -115,12 +139,16 @@ export const getAvailableSlotsForDate = async (
     freeBusyResponse.data.calendars?.[policy.calendarId]?.busy ?? []
   );
 
-  return candidateSlots
-    .filter((slot) => !busyRanges.some((busy) => rangesOverlap(slot.start, slot.end, busy.start, busy.end)))
-    .map((slot) => ({
+  return candidateSlots.map((slot) => {
+    const isBooked = busyRanges.some((busy) =>
+      rangesOverlap(slot.start, slot.end, busy.start, busy.end)
+    );
+    return {
       startIso: slot.start.toISOString(),
       endIso: slot.end.toISOString(),
       label: slot.label,
-    }));
+      status: isBooked ? ("booked" as const) : ("available" as const),
+    };
+  });
 };
 
