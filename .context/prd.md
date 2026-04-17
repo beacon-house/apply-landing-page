@@ -1,7 +1,7 @@
 # Product Requirements Document
 
-Last updated: 2026-02-04
-Source: Extracted from codebase (src/types/form.ts, src/lib/leadCategorization.ts)
+Last updated: 2026-04-17
+Source: Extracted from codebase (src/types/form.ts, src/lib/leadCategorization.ts, netlify/functions/)
 
 ## Purpose
 Lead capture landing page for Beacon House premium admissions consultancy. Qualifies leads and routes to appropriate counselors.
@@ -67,14 +67,32 @@ For: `nurture`, `masters`
 
 ## Counselor Assignment & Availability
 
-### Viswanathan (BCH leads)
-- **Monday:** OFF
+### Viswanathan (BCH leads, sometimes lum-l2)
+- **Monday:** OFF (shown as all booked in UI)
 - **Tuesday-Saturday:** 11 AM - 7 PM
 - **Sunday:** 11 AM - 3 PM
 
-### Karthik (Luminaire leads)
-- **Sunday:** OFF
+### Karthik (Luminaire leads, sometimes lum-l2)
+- **Sunday:** OFF (shown as all booked in UI)
 - **Monday-Saturday:** 11 AM - 1 PM, 4 PM - 7 PM
+
+### Slot Display Rules
+- 2 PM globally blocked for both counselors
+- All candidate slots shown — booked ones greyed out with "Booked" label, available ones selectable
+- Off-day slots (Monday/BCH, Sunday/LUM) shown as all "Booked" to create fully-booked impression
+- Real-time availability via Google Calendar FreeBusy API (Netlify function)
+- Static fallback when API unavailable — all slots shown as "available"
+
+### Booking Failure Handling
+- If Google Calendar API fails, form still submits with static fallback slots
+- `bookingFailureContext` tracked with failure type + user's requested slot
+- `needs_manual_followup: true` sent to Make.com for proactive team follow-up
+- Calendar event creation handled by Make.com (not codebase)
+
+### lum-l2 Routing
+- `lum-l2` leads can route to either counselor via `GCAL_ID_LUM_L2` env var
+- Defaults to Karthik's calendar if not set
+- Business decides which counselor handles lum-l2 at any given time
 
 ## Success Metrics
 - Form completion rate

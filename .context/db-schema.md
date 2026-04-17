@@ -1,14 +1,14 @@
 # Database Schema
 
-Last updated: 2026-02-04
-Source: src/lib/formTracking.ts, src/lib/database.ts
+Last updated: 2026-04-17
+Source: src/lib/formTracking.ts, src/lib/database.ts, supabase/migrations/
 
 ## Supabase Project
 - **Project:** apply-new-adms-lp-v2
 - **URL:** knablvyvctlofexttsqg.supabase.co
 - **RLS:** Enabled
 
-## Table: form_sessions (35 columns)
+## Table: form_sessions (41 columns)
 
 ### Primary Keys
 | Column | Type | Constraint |
@@ -72,6 +72,16 @@ Source: src/lib/formTracking.ts, src/lib/database.ts
 | `is_qualified_lead` | boolean | BCH or Luminaire |
 | `page_completed` | integer | 1 or 2 |
 | `triggered_events` | jsonb | Meta events fired |
+
+### Booking Status Fields (added Apr 17, 2026)
+| Column | Type | Values | Description |
+|--------|------|--------|-------------|
+| `booking_status` | text | `success`, `failed`, `no_attempt` | Whether live slot verification succeeded |
+| `booking_failure_type` | text | `availability_fetch_failed`, `no_slots_available`, null | Why booking failed |
+| `booking_failure_reason` | text | Human-readable error string, null | Detailed failure reason |
+| `last_attempted_date` | text | `YYYY-MM-DD`, null | Date user selected |
+| `last_attempted_slot` | text | Slot label (e.g. "3 PM"), null | Slot user picked (only set on failure path) |
+| `needs_manual_followup` | boolean | `true`, `false` | Team must proactively reach out to user |
 
 ### UTM Parameters
 | Column | Type |
@@ -140,3 +150,8 @@ await supabase
     ignoreDuplicates: false
   });
 ```
+
+## Migrations
+| File | Applied | Description |
+|------|---------|-------------|
+| `supabase/migrations/add_booking_status_fields.sql` | Apr 17, 2026 (staging + prod) | 6 nullable booking status columns |

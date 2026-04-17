@@ -1,6 +1,6 @@
 # Integrations
 
-Last updated: 2026-02-04
+Last updated: 2026-04-17
 
 ## Supabase
 
@@ -133,13 +133,21 @@ Publish: dist/
 GOOGLE_SERVICE_ACCOUNT_EMAIL
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 GCAL_ID_BCH
-GCAL_ID_LUM
+GCAL_ID_LUM_L1
+GCAL_ID_LUM_L2 (optional, defaults to GCAL_ID_LUM_L1)
 ```
 
 ### Setup Notes
 1. Create Google Cloud service account with Calendar API enabled.
 2. Share each counselor calendar with service account email (read access is sufficient).
-3. Put calendar IDs in `GCAL_ID_BCH` and `GCAL_ID_LUM`.
+3. Put calendar IDs in `GCAL_ID_BCH`, `GCAL_ID_LUM_L1`, and optionally `GCAL_ID_LUM_L2`.
+
+### Lead Category → Calendar Routing
+| lead_category | Calendar | Env Var |
+|---------------|----------|---------|
+| `bch` | Vishy's calendar | GCAL_ID_BCH |
+| `lum-l1` | Karthik's calendar | GCAL_ID_LUM_L1 |
+| `lum-l2` | Configurable (default: Karthik) | GCAL_ID_LUM_L2 |
 
 ### Business Rules (server-side enforced)
 - `leadCategory === bch` routes to BCH counselor calendar; all others route to LUM counselor.

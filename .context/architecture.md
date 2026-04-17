@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-02-04
+Last updated: 2026-04-17
 Source: Codebase structure analysis
 
 ## System Overview
@@ -31,6 +31,24 @@ Source: Codebase structure analysis
               │ Google   │         │ Email    │
               │ Sheets   │         │ Notifs   │
               └──────────┘         └──────────┘
+                                        │
+                               ┌────────┴────────┐
+                               ▼                  ▼
+                         ┌──────────┐       ┌──────────┐
+                         │ Google   │       │ Google   │
+                         │ Calendar │       │ Calendar │
+                         │ (Karthik)│       │ (Vishy)  │
+                         └──────────┘       └──────────┘
+
+┌──────────────────────────────────────────────────────┐
+│              Netlify Functions (server-side)          │
+│  ┌──────────────────┐  ┌───────────────────────────┐│
+│  │ gcal-availability│  │ _counselorConfig, _gcal,  ││
+│  │ (POST endpoint)  │  │ _slotEngine (helpers)     ││
+│  └──────────────────┘  └───────────────────────────┘│
+│  Reads: Google Calendar FreeBusy API (readonly)      │
+│  Writes: NONE — Make.com creates calendar events     │
+└──────────────────────────────────────────────────────┘
 ```
 
 ## Tech Stack
@@ -45,6 +63,8 @@ Source: Codebase structure analysis
 | Forms | React Hook Form 7.51 + Zod 3.22 |
 | State | Zustand 4.5 |
 | Database | Supabase PostgreSQL |
+| Calendar API | Google Calendar FreeBusy (read-only) |
+| Serverless | Netlify Functions (Node.js) |
 | Hosting | Netlify |
 
 ## Directory Structure
@@ -55,7 +75,7 @@ src/
 │   ├── forms/
 │   │   ├── FormContainer.tsx      # Form orchestration
 │   │   ├── InitialLeadCaptureForm.tsx  # Page 1
-│   │   ├── QualifiedLeadForm.tsx       # Page 2A
+│   │   ├── QualifiedLeadForm.tsx       # Page 2A (calendar + booking)
 │   │   └── DisqualifiedLeadForm.tsx    # Page 2B
 │   ├── ui/                        # Radix-based components
 │   ├── LandingPage.tsx
@@ -64,6 +84,7 @@ src/
 ├── lib/
 │   ├── leadCategorization.ts      # Lead qualification rules
 │   ├── formTracking.ts            # Supabase persistence
+│   ├── form.ts                    # Make.com webhook payload
 │   ├── metaPixelEvents.ts         # Client-side tracking
 │   ├── metaCAPI.ts                # Server-side tracking
 │   ├── database.ts                # Supabase client
@@ -72,9 +93,18 @@ src/
 ├── schemas/
 │   └── form.ts                    # Zod schemas
 ├── store/
-│   └── formStore.ts               # Zustand store
+│   └── formStore.ts               # Zustand store (incl. bookingFailureContext)
 └── types/
-    └── form.ts                    # TypeScript interfaces
+    └── form.ts                    # TypeScript interfaces (incl. BookingFailureContext)
+netlify/
+└── functions/
+    ├── gcal-availability.ts       # POST endpoint — returns candidate slots with status
+    ├── _counselorConfig.ts         # Counselor policies + calendar routing
+    ├── _gcal.ts                   # Google Calendar auth + FreeBusy + timezone helpers
+    └── _slotEngine.ts             # Candidate slot building + busy overlap detection
+supabase/
+└── migrations/
+    └── add_booking_status_fields.sql  # 6 new booking columns
 ```
 
 ## Data Flow
@@ -85,9 +115,11 @@ src/
 2. **Section Complete** → `trackFormSection()` → Supabase save
 3. **Continue Click** → `determineLeadCategory()` → Route decision
 4. **Page 2 Load** → Page 2A (calendar) or 2B (contact)
-5. **Page 2 Fill** → Zustand store updated
-6. **Submit Click** → Final Supabase save + Make.com webhook
-7. **Thank You** → Form state reset
+5. **Date Select** → `fetchAvailabilitySlots()` → Netlify function → Google Calendar FreeBusy → show booked/available slots
+6. **Slot Select** → Zustand store updated (bookingFailureContext tracked if failure)
+7. **Page 2 Fill** → Zustand store updated
+8. **Submit Click** → Final Supabase save + Make.com webhook (ALWAYS fires, regardless of booking outcome)
+9. **Thank You** → Form state reset
 
 ### Dual Persistence
 
@@ -95,10 +127,12 @@ src/
 - Real-time queries
 - CRM integration ready
 - Incremental saves at each step
+- Booking status fields for follow-up tracking
 
-**Backup:** Make.com → Google Sheets
+**Backup:** Make.com → Google Sheets + Google Calendar event
 - Team access for manual review
 - Triggered on final submit only
+- `needs_manual_followup` flag routes failures to proactive follow-up
 
 ## State Management
 
@@ -114,8 +148,21 @@ interface FormState {
   isSubmitting: boolean;
   isSubmitted: boolean;
   startTime: number;
+  bookingFailureContext: BookingFailureContext;  // Tracks slot availability failures
 }
 ```
+
+### Booking Failure Context
+When Google Calendar API fails or all slots are booked, this context is recorded and passed to both Supabase and Make.com:
+```typescript
+interface BookingFailureContext {
+  failureType: 'availability_fetch_failed' | 'no_slots_available' | null;
+  failureReason: string | null;
+  lastAttemptedDate: string | null;    // YYYY-MM-DD
+  lastAttemptedSlot: string | null;    // e.g. "3 PM"
+}
+```
+When `failureType` is set, `needs_manual_followup: true` is sent to Make.com for proactive follow-up.
 
 ## Key Design Patterns
 

@@ -36,14 +36,21 @@ npm run lint     # ESLint
 |---------|------|
 | Lead qualification | `src/lib/leadCategorization.ts` |
 | Form persistence | `src/lib/formTracking.ts` |
+| Webhook payload | `src/lib/form.ts` |
 | Meta events | `src/lib/metaPixelEvents.ts` |
 | CAPI integration | `src/lib/metaCAPI.ts` |
 | Form state | `src/store/formStore.ts` |
 | Validation | `src/schemas/form.ts` |
-| Types | `src/types/form.ts` |
+| Types (incl. BookingFailureContext) | `src/types/form.ts` |
 | Page 1 form | `src/components/forms/InitialLeadCaptureForm.tsx` |
-| Page 2A (calendar) | `src/components/forms/QualifiedLeadForm.tsx` |
+| Page 2A (calendar + booking) | `src/components/forms/QualifiedLeadForm.tsx` |
 | Page 2B (contact) | `src/components/forms/DisqualifiedLeadForm.tsx` |
+| Form orchestration | `src/components/forms/FormContainer.tsx` |
+| Calendar availability endpoint | `netlify/functions/gcal-availability.ts` |
+| Counselor policies + routing | `netlify/functions/_counselorConfig.ts` |
+| Google Calendar auth + helpers | `netlify/functions/_gcal.ts` |
+| Slot building + busy detection | `netlify/functions/_slotEngine.ts` |
+| DB migration | `supabase/migrations/add_booking_status_fields.sql` |
 
 ## Quick Reference
 

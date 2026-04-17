@@ -1,6 +1,6 @@
 # Progress Tracker
 
-Last updated: 2026-02-04
+Last updated: 2026-04-17
 
 ## Completed
 
@@ -26,6 +26,20 @@ Last updated: 2026-02-04
 - [x] Karthik restrictions (Sun off, 11-1 & 4-7)
 - [x] 8 PM slot removed for both counselors
 
+### Google Calendar Integration (shipped Apr 17, 2026)
+- [x] Real-time counselor availability via Google FreeBusy API (read-only)
+- [x] Netlify serverless functions (gcal-availability, _counselorConfig, _gcal, _slotEngine)
+- [x] All candidate slots shown — booked slots greyed out with "Booked" label, available slots selectable
+- [x] Off-day slots (Monday/BCH, Sunday/LUM) shown as all booked
+- [x] Static fallback when Google Calendar API unavailable
+- [x] bookingFailureContext tracked in Zustand store
+- [x] Decoupled submission — Supabase/Meta/Make.com ALWAYS fire regardless of booking outcome
+- [x] 6 booking status fields added to webhook + Supabase payloads
+- [x] needs_manual_followup flag for Make.com proactive follow-up routing
+- [x] Support for lum-l2 as separate counselor (GCAL_ID_LUM_L2 env var)
+- [x] Calendar event creation handled by Make.com (not codebase)
+- [x] Service account with calendar.readonly scope
+
 ### Analytics & Tracking
 - [x] Meta Pixel integration (~37 events)
 - [x] Meta CAPI server-side tracking via Edge Function
@@ -41,14 +55,16 @@ Last updated: 2026-02-04
 - [x] Environment-based configuration
 
 ## In Progress
-- [ ] Google Calendar API integration (real-time availability)
+- [ ] Make.com scenario update — wire needs_manual_followup router + failure email (Krishna)
 
 ## Blocked
 - None currently
 
-## Recently Shipped (Jan 2026)
+## Recently Shipped
 | Date | Change |
 |------|--------|
+| Apr 17 | Google Calendar real-time availability (read-only FreeBusy) + booked/available slot UI + booking failure handling |
+| Apr 17 | Varun's initial calendar feature: gcal-availability + gcal-booking Netlify functions |
 | Jan 23 | Remove 8 PM slot for both counselors |
 | Jan 19 | Viswanathan slot availability restrictions |
 | Jan 19 | Destination-based lead categorization rules |
