@@ -1,12 +1,6 @@
 import { google } from "googleapis";
 import type { calendar_v3 } from "googleapis";
 
-export interface SlotInterval {
-  startIso: string;
-  endIso: string;
-  label: string;
-}
-
 const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
   /\\n/g,
   "\n"
@@ -23,7 +17,7 @@ export const getCalendarClient = (): calendar_v3.Calendar => {
   const auth = new google.auth.JWT({
     email: CLIENT_EMAIL,
     key: PRIVATE_KEY,
-    scopes: ["https://www.googleapis.com/auth/calendar"],
+    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
   });
 
   return google.calendar({ version: "v3", auth });

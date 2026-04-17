@@ -44,7 +44,8 @@ export default function FormContainer() {
     setSubmitting,
     setSubmitted,
     addTriggeredEvents,
-    getLatestFormData // Import the new getter
+    getLatestFormData, // Import the new getter
+    bookingFailureContext
   } = useFormStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -150,7 +151,9 @@ export default function FormContainer() {
         await trackFormSubmission(sessionId, finalData, true);
         
         // Submit form with lead category and all accumulated events
-        await submitFormData(finalData, 1, startTime, true, finalTriggeredEventsForSubmission);
+        // Grade 7 below has no booking attempt
+        const noBookingCtx = { failureType: null as string | null, failureReason: null as string | null, lastAttemptedDate: null as string | null, lastAttemptedSlot: null as string | null };
+        await submitFormData(finalData, 1, startTime, true, finalTriggeredEventsForSubmission, noBookingCtx);
         setSubmitting(false);
         setSubmitted(true);
         return;
@@ -184,8 +187,9 @@ export default function FormContainer() {
         
         // Track student direct submission
         await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
-        
-        await submitFormData(latestFormDataAfterUpdates, 1, startTime, true, finalTriggeredEventsForStudentSubmission);
+
+        const noBookingCtx = { failureType: null as string | null, failureReason: null as string | null, lastAttemptedDate: null as string | null, lastAttemptedSlot: null as string | null };
+        await submitFormData(latestFormDataAfterUpdates, 1, startTime, true, finalTriggeredEventsForStudentSubmission, noBookingCtx);
         setSubmitting(false);
         setSubmitted(true);
         return;
@@ -279,7 +283,9 @@ export default function FormContainer() {
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
       
       // Submit all form data including counselling details and all accumulated events
-      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission);
+      // Include booking failure context so Make.com knows if proactive follow-up is needed
+      const failureCtx = useFormStore.getState().bookingFailureContext;
+      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission, failureCtx);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -317,7 +323,9 @@ export default function FormContainer() {
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
       
       // Submit all form data and all accumulated events
-      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission);
+      // Disqualified leads have no booking attempt
+      const noAttemptCtx = { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null };
+      await submitFormData(latestFormDataAfterUpdates, 2, startTime, true, finalTriggeredEventsForSubmission, noAttemptCtx);
       
       setSubmitting(false);
       setSubmitted(true);
@@ -425,7 +433,11 @@ export default function FormContainer() {
           ) : formData.lead_category === 'nurture' || formData.lead_category === 'masters' ? (
             <p>Thank you for providing your details. Our admissions team will review your profile and reach out within 48 hours to discuss potential pathways that match your specific needs and requirements.</p>
           ) : (formData.selectedDate && formData.selectedSlot) ? (
-            <p>We've scheduled your counselling session for {formData.selectedDate} at {formData.selectedSlot}. Our team will contact you soon to confirm.</p>
+            bookingFailureContext.failureType ? (
+              <p>Thanks! We've saved your details and your preferred time ({formData.selectedSlot} on {formData.selectedDate}). Since we couldn't confirm your slot in real-time, our team will reach out within a few hours to schedule your consultation.</p>
+            ) : (
+              <p>We've scheduled your counselling session for {formData.selectedDate} at {formData.selectedSlot}. Our team will contact you soon to confirm.</p>
+            )
           ) : (
             <p>We appreciate you taking the time to share your profile with us. Our admissions team will reach out to you within the next 24 hours.</p>
           )}

@@ -12,6 +12,7 @@
 import { supabase } from './database';
 import { debugLog, errorLog } from '@/lib/logger';
 import { useFormStore } from '@/store/formStore';
+import type { BookingFailureContext } from '@/types/form';
 
 // Generate unique session ID for tracking
 export const generateSessionId = (): string => {
@@ -100,7 +101,20 @@ export const saveFormDataIncremental = async (
       utm_term: utmParameters.utm_term || null,
       utm_content: utmParameters.utm_content || null,
       utm_id: utmParameters.utm_id || null,
-      
+
+      // Booking status fields (for proactive follow-up)
+      booking_status: (() => {
+        const failureCtx: BookingFailureContext | undefined = formData.bookingFailureContext;
+        if (failureCtx?.failureType) return 'failed';
+        if (isQualifiedLead && isCounsellingBooked) return 'success';
+        return 'no_attempt';
+      })(),
+      booking_failure_type: formData.bookingFailureContext?.failureType || null,
+      booking_failure_reason: formData.bookingFailureContext?.failureReason || null,
+      last_attempted_date: formData.bookingFailureContext?.lastAttemptedDate || null,
+      last_attempted_slot: formData.bookingFailureContext?.lastAttemptedSlot || null,
+      needs_manual_followup: Boolean(formData.bookingFailureContext?.failureType),
+
       created_at: new Date().toISOString()
     };
 

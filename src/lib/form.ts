@@ -11,7 +11,7 @@
  * - Clean separation between frontend and backend field names
  */
 
-import { LeadCategory, CompleteFormData } from '@/types/form';
+import { LeadCategory, CompleteFormData, BookingFailureContext } from '@/types/form';
 import { initialLeadCaptureSchema, qualifiedLeadSchema, disqualifiedLeadSchema } from '@/schemas/form';
 import { ZodError } from 'zod';
 import { 
@@ -36,7 +36,8 @@ export const submitFormData = async (
   step: number,
   startTime: number,
   isComplete: boolean = false,
-  triggeredEvents: string[] = []
+  triggeredEvents: string[] = [],
+  bookingFailureContext?: BookingFailureContext
 ): Promise<Response> => {
   const webhookUrl = import.meta.env.VITE_REGISTRATION_WEBHOOK_URL?.trim();
   if (!webhookUrl) {
@@ -116,7 +117,15 @@ export const submitFormData = async (
     utm_term: utmParameters.utm_term || null,
     utm_content: utmParameters.utm_content || null,
     utm_id: utmParameters.utm_id || null,
-    
+
+    // Booking status fields (for Make.com routing + proactive follow-up)
+    booking_status: bookingFailureContext?.failureType ? 'failed' : (isQualifiedLead && isCounsellingBooked ? 'success' : 'no_attempt'),
+    booking_failure_type: bookingFailureContext?.failureType || null,
+    booking_failure_reason: bookingFailureContext?.failureReason || null,
+    last_attempted_date: bookingFailureContext?.lastAttemptedDate || null,
+    last_attempted_slot: bookingFailureContext?.lastAttemptedSlot || null,
+    needs_manual_followup: Boolean(bookingFailureContext?.failureType),
+
     // Timestamp
     created_at: new Date().toISOString()
   };

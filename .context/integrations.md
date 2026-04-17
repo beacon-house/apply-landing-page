@@ -119,16 +119,14 @@ Publish: dist/
 
 ---
 
-## Google Calendar (Netlify Functions)
+## Google Calendar (Netlify Functions — Read-Only)
 
 ### Purpose
-- Real-time counselor availability via Google FreeBusy API
-- Slot lockout by creating counselor calendar events
-- Invite parent as attendee (configurable)
+- Real-time counselor availability via Google FreeBusy API (read-only)
+- Calendar event creation is handled by Make.com (not this codebase)
 
 ### Runtime Endpoints
-- `/.netlify/functions/gcal-availability`
-- `/.netlify/functions/gcal-booking`
+- `/.netlify/functions/gcal-availability` — POST, returns available slots for a given date + leadCategory
 
 ### Server Configuration (Netlify env)
 ```
@@ -136,14 +134,12 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 GCAL_ID_BCH
 GCAL_ID_LUM
-GCAL_ADD_PARENT_AS_ATTENDEE=true|false
 ```
 
 ### Setup Notes
 1. Create Google Cloud service account with Calendar API enabled.
-2. Share each counselor calendar with service account email.
-3. Grant permission to create/edit events on those calendars.
-4. Put calendar IDs in `GCAL_ID_BCH` and `GCAL_ID_LUM`.
+2. Share each counselor calendar with service account email (read access is sufficient).
+3. Put calendar IDs in `GCAL_ID_BCH` and `GCAL_ID_LUM`.
 
 ### Business Rules (server-side enforced)
 - `leadCategory === bch` routes to BCH counselor calendar; all others route to LUM counselor.
@@ -151,7 +147,13 @@ GCAL_ADD_PARENT_AS_ATTENDEE=true|false
 - Day windows remain same as current business rules.
 - 2 PM slot is globally blocked for both counselors.
 
-### Event Behavior
-- Event title format: `Beacon House Consultation - {StudentName}`.
-- Booking endpoint rechecks freebusy before insert to avoid race conditions.
-- If slot is no longer free, endpoint returns `409` with `SLOT_TAKEN`.
+### Fallback Behavior
+- If Google Calendar API is unavailable, the form falls back to static slot rules (same as pre-GCal behavior).
+- A `bookingFailureContext` is recorded in the store with `failureType: 'availability_fetch_failed'` or `'no_slots_available'`.
+- This context is passed to both Supabase and Make.com webhook so the team can proactively reach out.
+
+### Booking Failure Flow
+- When availability fetch fails or returns no slots, user still sees fallback slots and can submit the form.
+- Supabase write + Meta events + Make.com webhook ALL fire regardless of booking success/failure.
+- Make.com receives `needs_manual_followup: true` flag when booking failed, routing to proactive follow-up.
+- Make.com creates the calendar event + adds parent as attendee (existing flow, unchanged).

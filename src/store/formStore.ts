@@ -10,7 +10,7 @@
  */
 
 import { create } from 'zustand';
-import { CompleteFormData, UtmParameters } from '@/types/form';
+import { CompleteFormData, UtmParameters, BookingFailureContext } from '@/types/form';
 import { validateFormStep } from '@/lib/form';
 import { generateSessionId } from '@/lib/formTracking';
 import { debugLog } from '@/lib/logger';
@@ -25,6 +25,7 @@ interface FormState {
   triggeredEvents: string[];
   utmParameters: UtmParameters;
   eventCounter: number;
+  bookingFailureContext: BookingFailureContext;
   setStep: (step: number) => void;
   updateFormData: (data: Partial<CompleteFormData>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
@@ -32,6 +33,7 @@ interface FormState {
   addTriggeredEvents: (events: string[]) => void;
   clearTriggeredEvents: () => void;
   setUtmParameters: (utm: UtmParameters) => void;
+  setBookingFailureContext: (ctx: BookingFailureContext) => void;
   resetForm: () => void;
   canProceed: (step: number) => boolean;
   getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[]; utmParameters: UtmParameters };
@@ -48,6 +50,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   triggeredEvents: [],
   utmParameters: {},
   eventCounter: 0,
+  bookingFailureContext: { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null },
   
   setStep: (step) => {
     set({ currentStep: step });
@@ -79,6 +82,8 @@ export const useFormStore = create<FormState>((set, get) => ({
     utmParameters: { ...state.utmParameters, ...utm }
   })),
   
+  setBookingFailureContext: (ctx) => set({ bookingFailureContext: ctx }),
+  
   resetForm: () => set({
     currentStep: 1,
     formData: {},
@@ -88,7 +93,8 @@ export const useFormStore = create<FormState>((set, get) => ({
     sessionId: generateSessionId(),
     triggeredEvents: [],
     utmParameters: {},
-    eventCounter: 0
+    eventCounter: 0,
+    bookingFailureContext: { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null }
   }),
   
   incrementEventCounter: () => {

@@ -73,6 +73,14 @@ export type CompleteFormData = InitialLeadCaptureData & {
   utmParameters?: UtmParameters;
 };
 
+// Booking failure context — tracks slot availability issues
+export interface BookingFailureContext {
+  failureType: 'availability_fetch_failed' | 'no_slots_available' | null;
+  failureReason: string | null;
+  lastAttemptedDate: string | null;
+  lastAttemptedSlot: string | null;
+}
+
 // Form submission response
 export interface FormSubmissionResponse {
   success: boolean;
