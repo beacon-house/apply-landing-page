@@ -66,18 +66,14 @@ interface AvailabilitySlot {
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
   const { sessionId, formData: storeFormData, triggeredEvents, setBookingFailureContext } = useFormStore();
 
-  // Determine which counselor to show based on lead category
-  const isBCH = leadCategory === 'bch';
-  const counselorName = isBCH ? "Viswanathan Ramakrishnan" : "Karthik Lakshman";
-  const counselorImage = isBCH ? "/vishy.png" : "/karthik.png";
+  // All qualified leads (bch, lum-l1, lum-l2) route to Viswanathan
+  const isBCH = ['bch', 'lum-l1', 'lum-l2'].includes(leadCategory);
+  const counselorName = "Viswanathan Ramakrishnan";
+  const counselorImage = "/vishy.png";
   const counselorTitle = "Managing Partner";
-  const linkedinUrl = isBCH 
-    ? "https://www.linkedin.com/in/viswanathan-r-8504182/" 
-    : "https://www.linkedin.com/in/karthiklakshman/";
-  
-  const counselorBio = isBCH 
-    ? "IIT-IIM alum with 20+ yrs in education - built Manipal schools, founded Magic Crate (acquired by BYJU'S). Dedicated to helping your child thrive in tomorrow's world."
-    : "Georgia Tech Masters graduate. Former McKinsey consultant and Byju's Test Prep division leader with international education expertise.";
+  const linkedinUrl = "https://www.linkedin.com/in/viswanathan-r-8504182/";
+
+  const counselorBio = "IIT-IIM alum with 20+ yrs in education - built Manipal schools, founded Magic Crate (acquired by BYJU'S). Dedicated to helping your child thrive in tomorrow's world.";
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarDates, setCalendarDates] = useState<Date[]>([]);

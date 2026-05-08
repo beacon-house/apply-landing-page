@@ -135,13 +135,11 @@ export const counselorPolicies: Record<CounselorKey, CounselorPolicy> = {
 export const resolveCounselorKeyFromLeadCategory = (
   leadCategory: LeadCategory | string
 ): CounselorKey => {
-  if (leadCategory === "bch") {
+  // All qualified leads (bch, lum-l1, lum-l2) route to Viswanathan
+  if (leadCategory === "bch" || leadCategory === "lum-l1" || leadCategory === "lum-l2") {
     return "bch";
   }
-  if (leadCategory === "lum-l2") {
-    return "lum_l2";
-  }
-  return "lum"; // lum-l1 and any other qualified lead
+  return "bch"; // fallback
 };
 
 export const getCounselorPolicyForLeadCategory = (
