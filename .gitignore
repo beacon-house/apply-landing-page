@@ -4,3 +4,6 @@ node_modules/
 /dist
 # Local Netlify folder
 .netlify
+
+# Context docs live outside repo in ../bch-agent-context-system/
+.context
