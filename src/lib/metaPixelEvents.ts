@@ -304,6 +304,22 @@ export const fireLeadClassificationEvents = (formData: Partial<CompleteFormData>
       trackMetaPixelEvent('apply_disqualfd_prnt', formData);
       firedEvents.push('apply_disqualfd_prnt');
     }
+
+    // Non-spam parent event (any grade — masters already removed from form)
+    const isNonSpamParent = !isSpam;
+    if (isNonSpamParent) {
+      trackMetaPixelEvent('apply_nonspam_prnt', formData);
+      firedEvents.push('apply_nonspam_prnt');
+    }
+
+    // TAM parent event (grades 8-12, non-State Board, non-spam)
+    const isTamParent = isNonSpamParent
+      && ['8', '9', '10', '11', '12'].includes(formData.currentGrade || '')
+      && formData.curriculumType !== 'State_Boards';
+    if (isTamParent) {
+      trackMetaPixelEvent('apply_tam_prnt', formData);
+      firedEvents.push('apply_tam_prnt');
+    }
   } else if (isStudent) {
     // Student events
     trackMetaPixelEvent('apply_stdnt', formData);

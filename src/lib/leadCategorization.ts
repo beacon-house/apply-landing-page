@@ -36,9 +36,8 @@ const isIndianCurriculum = (curriculumType: string): boolean => {
  * 1. bch - High priority leads
  * 2. lum-l1 - Luminaire Level 1 leads
  * 3. lum-l2 - Luminaire Level 2 leads
- * 4. masters - Masters applicants
- * 5. nurture - Default category for development
- * 6. drop - Grade 7 or below
+ * 4. nurture - Default category for development
+ * 5. drop - Grade 7 or below
  */
 export const determineLeadCategory = (
   currentGrade: string,
@@ -75,11 +74,7 @@ export const determineLeadCategory = (
   else if (currentGrade === '7_below') {
     determinedCategory = 'drop';
   }
-  // 5. Masters grade → masters
-  else if (currentGrade === 'masters') {
-    determinedCategory = 'masters';
-  }
-  // 6. ROW-only destination → nurture (global override)
+  // 5. ROW-only destination → nurture (global override)
   // If user selects ONLY "Rest of World" with no other destinations
   else if (targetGeographies?.length === 1 && targetGeographies.includes('Rest of World')) {
     determinedCategory = 'nurture';

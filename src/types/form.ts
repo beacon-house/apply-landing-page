@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Shared enums for form validation
-export const GRADE_LEVELS = ['7_below', '8', '9', '10', '11', '12', 'masters'] as const;
+export const GRADE_LEVELS = ['7_below', '8', '9', '10', '11', '12'] as const;
 export const CURRICULUM_TYPES = ['IB', 'IGCSE', 'CBSE', 'ICSE', 'State_Boards', 'Others'] as const;
 export const SCHOLARSHIP_REQUIREMENTS = ['scholarship_optional', 'partial_scholarship', 'full_scholarship'] as const;
 export const FORM_FILLER_TYPES = ['parent', 'student'] as const;
@@ -11,7 +11,7 @@ export const GRADE_FORMAT_OPTIONS = ['gpa', 'percentage'] as const;
 export const TARGET_GEOGRAPHIES = ['US', 'UK', 'Rest of World', 'Need Guidance'] as const;
 
 // Lead Categories
-export const LEAD_CATEGORIES = ['bch', 'lum-l1', 'lum-l2', 'nurture', 'masters', 'drop'] as const;
+export const LEAD_CATEGORIES = ['bch', 'lum-l1', 'lum-l2', 'nurture', 'drop'] as const;
 export type LeadCategory = typeof LEAD_CATEGORIES[number];
 
 // UTM Parameters interface

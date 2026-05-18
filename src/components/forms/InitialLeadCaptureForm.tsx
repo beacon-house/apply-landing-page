@@ -417,7 +417,6 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
                     <SelectItem value="9">Grade 9</SelectItem>
                     <SelectItem value="8">Grade 8</SelectItem>
                     <SelectItem value="7_below">Grade 7 or below</SelectItem>
-                    <SelectItem value="masters">Apply for Masters</SelectItem>
                   </SelectContent>
                 </Select>
               )}

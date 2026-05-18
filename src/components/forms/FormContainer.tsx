@@ -403,11 +403,11 @@ export default function FormContainer() {
   // Evaluation steps for regular evaluation animation
   const evaluationSteps = [
     {
-      message: `Analyzing your ${formData.currentGrade === 'masters' ? 'profile and program fit' : 'academic profile and curriculum fit'}`,
+      message: `Analyzing your academic profile and curriculum fit`,
       duration: 3500
     },
     {
-      message: `Processing ${formData.currentGrade === 'masters' ? 'graduate admission criteria' : 'admission criteria and program compatibility'}`,
+      message: `Processing admission criteria and program compatibility`,
       duration: 3500
     },
     {
@@ -430,7 +430,7 @@ export default function FormContainer() {
         <div className="max-w-lg text-gray-600">
           {formData.currentGrade === '7_below' ? (
             <p>We appreciate you taking the time to share your profile with us. Our admissions team shall get in touch.</p>
-          ) : formData.lead_category === 'nurture' || formData.lead_category === 'masters' ? (
+          ) : formData.lead_category === 'nurture' ? (
             <p>Thank you for providing your details. Our admissions team will review your profile and reach out within 48 hours to discuss potential pathways that match your specific needs and requirements.</p>
           ) : (formData.selectedDate && formData.selectedSlot) ? (
             bookingFailureContext.failureType ? (

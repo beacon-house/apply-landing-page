@@ -184,12 +184,6 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
   // Get appropriate messaging based on lead category
   const getMessaging = () => {
     switch (leadCategory) {
-      case 'masters':
-        return {
-          title: "Masters Program Guidance",
-          description: "Thank you for your interest in our Masters program guidance. Our team will review your profile and reach out with personalized recommendations for your graduate school journey.",
-          nextSteps: "Our Masters specialists will contact you within 48 hours to discuss your specific goals and create a customized application strategy."
-        };
       case 'drop':
         return {
           title: "Early Academic Planning",
