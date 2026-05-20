@@ -312,9 +312,9 @@ export const fireLeadClassificationEvents = (formData: Partial<CompleteFormData>
       firedEvents.push('apply_nonspam_prnt');
     }
 
-    // TAM parent event (grades 8-12, non-State Board, non-spam)
+    // TAM parent event (all grades, non-State Board, non-spam)
     const isTamParent = isNonSpamParent
-      && ['8', '9', '10', '11', '12'].includes(formData.currentGrade || '')
+      && ['7_below', '8', '9', '10', '11', '12'].includes(formData.currentGrade || '')
       && formData.curriculumType !== 'State_Boards';
     if (isTamParent) {
       trackMetaPixelEvent('apply_tam_prnt', formData);
