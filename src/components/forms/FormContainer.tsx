@@ -131,8 +131,8 @@ export default function FormContainer() {
       // Get the absolute latest state from the store after all updates
       const { formData: latestFormDataAfterUpdates, triggeredEvents: latestTriggeredEventsAfterUpdates } = getLatestFormData();
 
-      // If grade 7 or below, submit form immediately with DROP lead category
-      if (data.currentGrade === '7_below') {
+      // If drop category (grade 7_below or spam detection), submit form immediately with no Page 2
+      if (leadCategory === 'drop') {
         setSubmitting(true);
         const finalData = { 
           ...latestFormDataAfterUpdates, // Use latest form data
@@ -147,11 +147,11 @@ export default function FormContainer() {
         // Get the absolute latest triggered events after adding formCompleteEvents
         const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
 
-        // Track final submission for grade 7 below
+        // Track final submission for drop category
         await trackFormSubmission(sessionId, finalData, true);
         
         // Submit form with lead category and all accumulated events
-        // Grade 7 below has no booking attempt
+        // Drop category has no booking attempt
         const noBookingCtx = { failureType: null as string | null, failureReason: null as string | null, lastAttemptedDate: null as string | null, lastAttemptedSlot: null as string | null };
         await submitFormData(finalData, 1, startTime, true, finalTriggeredEventsForSubmission, noBookingCtx);
         setSubmitting(false);
@@ -428,7 +428,7 @@ export default function FormContainer() {
           Thank You for Your Interest
         </h3>
         <div className="max-w-lg text-gray-600">
-          {formData.currentGrade === '7_below' ? (
+          {formData.lead_category === 'drop' ? (
             <p>We appreciate you taking the time to share your profile with us. Our admissions team shall get in touch.</p>
           ) : formData.lead_category === 'nurture' ? (
             <p>Thank you for providing your details. Our admissions team will review your profile and reach out within 48 hours to discuss potential pathways that match your specific needs and requirements.</p>

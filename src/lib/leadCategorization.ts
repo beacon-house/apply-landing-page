@@ -6,7 +6,7 @@
  *
  * Changes made:
  * - Implemented lead categorization rules as specified
- * - Added global override rules (student forms, spam detection, etc.)
+ * - Added global override rules (student forms, spam detection → drop, etc.)
  * - Added qualified lead categorization (BCH, Luminaire L1, Luminaire L2)
  * - Added Indian curriculum (CBSE/ICSE/State_Boards) specific rules:
  *   - Grades 8-10 with partial scholarship → nurture
@@ -37,7 +37,7 @@ const isIndianCurriculum = (curriculumType: string): boolean => {
  * 2. lum-l1 - Luminaire Level 1 leads
  * 3. lum-l2 - Luminaire Level 2 leads
  * 4. nurture - Default category for development
- * 5. drop - Grade 7 or below
+ * 5. drop - Grade 7 or below OR spam detection (GPA=10 / percentage=100)
  */
 export const determineLeadCategory = (
   currentGrade: string,
@@ -62,9 +62,10 @@ export const determineLeadCategory = (
   if (formFillerType === 'student') {
     determinedCategory = 'nurture';
   }
-  // 2. Spam detection: GPA = 10 OR percentage = 100 → nurture
+  // 2. Spam detection: GPA = 10 OR percentage = 100 → drop
+  // Spam parents are treated like drop — no Page 2, no email capture (DT-001)
   else if (gpaValue === "10" || percentageValue === "100") {
-    determinedCategory = 'nurture';
+    determinedCategory = 'drop';
   }
   // 3. Full scholarship requirement → nurture
   else if (scholarshipRequirement === 'full_scholarship') {
