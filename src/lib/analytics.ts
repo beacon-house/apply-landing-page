@@ -1,5 +1,5 @@
-const MEASUREMENT_ID = 'G-ZRF7H5ZFXK';
-const PRODUCTION_DOMAIN = 'admissions.beaconhouse.in';
+const MEASUREMENT_ID = 'G-1PMRW2MXT4';
+const PRODUCTION_DOMAIN = 'apply.beaconhouse.in';
 import { debugLog, errorLog } from './logger';
 
 interface GAEventParams {
