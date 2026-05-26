@@ -398,7 +398,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
           </div>
 
           <div className="space-y-2">
-            <Label>Grade in Academic Year 25-26 <span className="text-red-500">*</span></Label>
+            <Label>Grade in Academic Year 26-27 <span className="text-red-500">*</span></Label>
             <Controller
               name="currentGrade"
               control={control}
@@ -408,7 +408,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
                     "h-12 bg-white",
                     errors.currentGrade ? 'border-red-500 focus:border-red-500' : ''
                   )} data-field="currentGrade">
-                    <SelectValue placeholder="Select Grade in Academic Year 25-26" />
+                    <SelectValue placeholder="Select Grade in Academic Year 26-27" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="12">Grade 12</SelectItem>
