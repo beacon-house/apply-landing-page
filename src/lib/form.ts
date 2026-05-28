@@ -117,6 +117,11 @@ export const submitFormData = async (
     utm_term: utmParameters.utm_term || null,
     utm_content: utmParameters.utm_content || null,
     utm_id: utmParameters.utm_id || null,
+    campaign_id: utmParameters.campaign_id || null,
+    utm_adset: utmParameters.utm_adset || null,
+    adset_id: utmParameters.adset_id || null,
+    ad_id: utmParameters.ad_id || null,
+    utm_placement: utmParameters.utm_placement || null,
 
     // Booking status fields (for Make.com routing + proactive follow-up)
     booking_status: bookingFailureContext?.failureType ? 'failed' : (isQualifiedLead && isCounsellingBooked ? 'success' : 'no_attempt'),
