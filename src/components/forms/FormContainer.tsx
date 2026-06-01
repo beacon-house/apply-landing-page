@@ -19,6 +19,7 @@ import { trackFormView, trackFormStepComplete, trackFormAbandonment, trackFormEr
 import { submitFormData, validateForm, FormValidationError } from '@/lib/form';
 import { determineLeadCategory } from '@/lib/leadCategorization';
 import { fireFormProgressionEvents, firePageViewEvent } from '@/lib/metaPixelEvents';
+import { fireGA4FormProgressionEvents } from '@/lib/ga4Events';
 import { toast } from '@/components/ui/toast';
 import { trackStep } from '@/lib/formTracking';
 import { 
@@ -143,6 +144,7 @@ export default function FormContainer() {
         // Fire Meta Pixel events for form completion
         const formCompleteEvents = fireFormProgressionEvents('form_complete', finalData);
         addTriggeredEvents(formCompleteEvents); // Add events to store
+        fireGA4FormProgressionEvents('form_complete', finalData);
         
         // Get the absolute latest triggered events after adding formCompleteEvents
         const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
@@ -162,6 +164,7 @@ export default function FormContainer() {
       // Fire Meta Pixel events for Page 1 completion
       const page1Events = fireFormProgressionEvents('page_1_complete', latestFormDataAfterUpdates);
       addTriggeredEvents(page1Events); // Add events to store
+      fireGA4FormProgressionEvents('page_1_complete', latestFormDataAfterUpdates);
       
       // Get the absolute latest triggered events after adding page1Events
       const { triggeredEvents: finalTriggeredEventsForPage1Save } = getLatestFormData();
@@ -181,6 +184,7 @@ export default function FormContainer() {
         // Fire Meta Pixel events for student direct submission
         const studentCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
         addTriggeredEvents(studentCompleteEvents);
+        fireGA4FormProgressionEvents('form_complete', latestFormDataAfterUpdates);
         
         // Get the absolute latest triggered events after adding studentCompleteEvents
         const { triggeredEvents: finalTriggeredEventsForStudentSubmission } = getLatestFormData();
@@ -214,6 +218,7 @@ export default function FormContainer() {
         // Fire Page 2 view events for disqualified leads
         const page2ViewEvents = fireFormProgressionEvents('page_2_view', latestFormDataAfterUpdates);
         addTriggeredEvents(page2ViewEvents); // Add events to store
+        fireGA4FormProgressionEvents('page_2_view', latestFormDataAfterUpdates);
         
         // No explicit incremental save here, as the useEffect below handles it
         // for disqualified leads when currentStep becomes 2.
@@ -268,10 +273,12 @@ export default function FormContainer() {
       // Fire Page 2 submit events
       const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
       addTriggeredEvents(page2SubmitEvents);
+      fireGA4FormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
       
       // Fire form complete events
       const formCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
       addTriggeredEvents(formCompleteEvents);
+      fireGA4FormProgressionEvents('form_complete', latestFormDataAfterUpdates);
       
       // Get the absolute latest triggered events after adding all events for this step
       const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
@@ -308,10 +315,12 @@ export default function FormContainer() {
       // Fire Page 2 submit events
       const page2SubmitEvents = fireFormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
       addTriggeredEvents(page2SubmitEvents);
+      fireGA4FormProgressionEvents('page_2_submit', latestFormDataAfterUpdates);
       
       // Fire form complete events
       const formCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
       addTriggeredEvents(formCompleteEvents);
+      fireGA4FormProgressionEvents('form_complete', latestFormDataAfterUpdates);
       
       // Get the absolute latest triggered events after adding all events for this step
       const { triggeredEvents: finalTriggeredEventsForSubmission } = getLatestFormData();
@@ -349,6 +358,7 @@ export default function FormContainer() {
     // Fire Page 2 view events when moving to qualified lead form
     const page2ViewEvents = fireFormProgressionEvents('page_2_view', latestFormDataBeforePage2View);
     addTriggeredEvents(page2ViewEvents); // Add events to store
+    fireGA4FormProgressionEvents('page_2_view', latestFormDataBeforePage2View);
     
     // Get the absolute latest triggered events after adding page2ViewEvents
     const { triggeredEvents: finalTriggeredEventsForPage2ViewSave } = getLatestFormData();

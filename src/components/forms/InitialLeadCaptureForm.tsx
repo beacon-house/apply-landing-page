@@ -43,6 +43,7 @@ import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { firePhoneCapturedEvent } from '@/lib/metaPixelEvents';
+import { fireGA4PhoneCapturedEvent } from '@/lib/ga4Events';
 
 interface InitialLeadCaptureFormProps {
   onSubmit: (data: InitialLeadCaptureData) => void;
@@ -142,6 +143,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
         countryCode: countryCode || '+91',
         location: location || undefined
       });
+      fireGA4PhoneCapturedEvent();
       setHasPhoneCaptureEventFired(true);
       debugLog('📱 Phone captured event fired:', { phoneNumber: phoneValue, countryCode, location });
     }

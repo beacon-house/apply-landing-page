@@ -33,6 +33,7 @@ import type { BookingFailureContext } from '@/types/form';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { fireEmailCapturedEvent, fireTamParentLevel2Event } from '@/lib/metaPixelEvents';
+import { fireGA4EmailCapturedEvent, fireGA4TamParentLevel2Event } from '@/lib/ga4Events';
 
 // Define the correct field order for validation error focusing
 const FIELD_ORDER: (keyof QualifiedLeadData)[] = [
@@ -367,9 +368,15 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
         phoneNumber: storeFormData.phoneNumber,
         countryCode: storeFormData.countryCode
       });
+      fireGA4EmailCapturedEvent();
 
       // Fire TAM parent level2 event — non-spam TAM parent entered email on Page 2A (DT-001)
       const level2Events = fireTamParentLevel2Event({
+        ...storeFormData,
+        email: emailValue,
+        parentName: parentNameValue || undefined,
+      });
+      fireGA4TamParentLevel2Event({
         ...storeFormData,
         email: emailValue,
         parentName: parentNameValue || undefined,

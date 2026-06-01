@@ -37,6 +37,7 @@ import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { fireEmailCapturedEvent } from '@/lib/metaPixelEvents';
+import { fireGA4EmailCapturedEvent } from '@/lib/ga4Events';
 
 // Define the correct field order for validation error focusing
 const FIELD_ORDER: (keyof DisqualifiedLeadData)[] = [
@@ -110,6 +111,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
         phoneNumber: storeFormData.phoneNumber,
         countryCode: storeFormData.countryCode
       });
+      fireGA4EmailCapturedEvent();
       setHasEmailCaptureEventFired(true);
       debugLog('📧 Email captured event fired:', { email: emailValue, parentName: parentNameValue });
     }
