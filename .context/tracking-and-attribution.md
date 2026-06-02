@@ -145,6 +145,12 @@ This GA4 mirror is separate from the older `analytics.ts` helper, which only tra
 
 No Google Ads conversion action snippet is currently required in code based on the current architecture. The conversion path is GA4 key events imported into Google Ads.
 
+## Current GA4 Property Status
+
+As of 2026-06-02, code still uses GA4 Measurement ID `G-1PMRW2MXT4`.
+
+The team is discussing whether the correct GA4 property is instead `G-ZRF7H5ZFXK`. Do not change the GA4 Measurement ID until the founder/team confirms the target property. Keep `AW-17192426075` as the Google Ads base tag unless Kamil provides a replacement.
+
 ## Not Verified In This Pass
 
 - Production Tag Assistant firing.

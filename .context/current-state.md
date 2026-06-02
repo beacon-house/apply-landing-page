@@ -1,6 +1,6 @@
 # Current State
 
-Last verified from local code on 2026-06-02. Live Netlify, GA4, Meta Events Manager, Make.com, and Supabase dashboard state were not verified in this pass.
+Last verified from local code and git push on 2026-06-02. Live Netlify deploy completion, GA4, Meta Events Manager, Make.com, and Supabase dashboard state were not verified in this pass.
 
 ## Product
 
@@ -52,15 +52,20 @@ All qualified leads route to Viswanathan. `resolveCounselorKeyFromLeadCategory()
 
 ## Shipped Locally
 
-- `main` is synced with `origin/main` at `79ffbfc feat: mirror Meta event architecture into GA4 for Google Ads conversions`.
+- `main`, `origin/main`, and `origin/staging` are at `ebcc3b2 feat: add grade 8 rule and GA4 staging logs`.
+- The same commit was pushed to remote `main` and `staging` on 2026-06-02.
 - GA4 base tag `G-1PMRW2MXT4` and Google Ads base tag `AW-17192426075` are in `@repo/index.html`.
 - GA4 mirror events are in code and wired alongside Meta event triggers.
+- GA4 staging console logs show event name, params, timestamp, and whether `window.gtag` was available.
+- Grade 8 parent leads that pass global overrides are routed to `nurture` from January through June in `Asia/Kolkata`; July through December follows the standard rules.
 - CAPI uses Netlify function `/.netlify/functions/meta-capi`, not Supabase Edge Functions.
 - Extra ad params are sent to Make.com webhook: `campaign_id`, `utm_adset`, `adset_id`, `ad_id`, `utm_placement`.
+- GA4 Measurement ID remains `G-1PMRW2MXT4`. A possible switch to `G-ZRF7H5ZFXK` is paused until the founder/team confirms the correct GA4 property.
 
 ## Not Verified In This Pass
 
 - Netlify production deployment for latest `main`.
+- Netlify staging deployment for latest `staging`.
 - GA4 Realtime or DebugView receipt.
 - Google Tag Assistant live tag firing.
 - Meta Events Manager event approval/delivery.
