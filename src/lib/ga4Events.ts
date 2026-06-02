@@ -59,21 +59,22 @@ const trackGA4Event = (
 ): void => {
   const envSuffix = getEnvironmentSuffix();
   const fullEventName = `${eventName}_${envSuffix}`;
+  const eventParams = { source: EVENT_SOURCE, ...(params || {}) };
 
   try {
-    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-      window.gtag('event', fullEventName, {
-        source: EVENT_SOURCE,
-        ...(params || {}),
-      });
+    const isGtagAvailable = typeof window !== 'undefined' && typeof window.gtag === 'function';
 
-      if (envSuffix === 'stg') {
-        debugLog('📊 GA4 Event Fired:', {
-          eventName: fullEventName,
-          params: { source: EVENT_SOURCE, ...(params || {}) },
-          timestamp: new Date().toISOString(),
-        });
-      }
+    if (envSuffix === 'stg') {
+      debugLog('📊 Google / GA4 Event Triggered:', {
+        eventName: fullEventName,
+        parameters: eventParams,
+        gtagAvailable: isGtagAvailable,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (isGtagAvailable) {
+      window.gtag('event', fullEventName, eventParams);
     } else {
       debugLog('GA4 gtag not available, event would have been:', fullEventName);
     }

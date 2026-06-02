@@ -16,6 +16,7 @@
  * - ROW-only destination override: Users selecting ONLY "Rest of World" → nurture
  * - Non-US, Non-NeedGuidance grades 8-9 override: If US and "Need Guidance" are
  *   not selected and grade is 8 or 9 → nurture (filters young non-US-focused leads)
+ * - Grade 8 Jan-Jun seasonal override: otherwise qualified parent leads → nurture
  */
 
 import { LeadCategory } from '@/types/form';
@@ -27,6 +28,22 @@ import { validateLeadCategory, logLeadCategoryError } from './dataValidation';
  */
 const isIndianCurriculum = (curriculumType: string): boolean => {
   return ['CBSE', 'ICSE', 'State_Boards'].includes(curriculumType);
+};
+
+/**
+ * Checks whether an evaluation date falls in Jan-Jun in Asia/Kolkata.
+ * This keeps seasonal lead rules aligned with the Beacon House operating timezone.
+ */
+export const isJanToJunInKolkata = (evaluationDate: Date = new Date()): boolean => {
+  const monthPart = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    month: 'numeric',
+  })
+    .formatToParts(evaluationDate)
+    .find(part => part.type === 'month');
+
+  const month = Number(monthPart?.value);
+  return month >= 1 && month <= 6;
 };
 
 /**
@@ -52,7 +69,8 @@ export const determineLeadCategory = (
   targetUniversities?: string,
   supportLevel?: string,
   extendedNurtureData?: any,
-  targetGeographies?: string[]
+  targetGeographies?: string[],
+  evaluationDate: Date = new Date()
 ): LeadCategory => {
   let determinedCategory: LeadCategory;
   
@@ -101,6 +119,12 @@ export const determineLeadCategory = (
              targetGeographies &&
              !targetGeographies.includes('US') &&
              !targetGeographies.includes('Need Guidance')) {
+      determinedCategory = 'nurture';
+    }
+
+    // Grade 8 Jan-Jun seasonal rule → nurture
+    // From July onward, Grade 8 follows the standard BCH qualification branch.
+    else if (currentGrade === '8' && isJanToJunInKolkata(evaluationDate)) {
       determinedCategory = 'nurture';
     }
 
