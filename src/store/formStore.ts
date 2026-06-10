@@ -13,7 +13,7 @@ import { create } from 'zustand';
 import { CompleteFormData, UtmParameters, BookingFailureContext } from '@/types/form';
 import { validateFormStep } from '@/lib/form';
 import { generateSessionId } from '@/lib/formTracking';
-import { debugLog } from '@/lib/logger';
+
 
 interface FormState {
   currentStep: number;
@@ -26,6 +26,7 @@ interface FormState {
   utmParameters: UtmParameters;
   eventCounter: number;
   bookingFailureContext: BookingFailureContext;
+  zohoLeadId: string | null;
   setStep: (step: number) => void;
   updateFormData: (data: Partial<CompleteFormData>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
@@ -34,6 +35,7 @@ interface FormState {
   clearTriggeredEvents: () => void;
   setUtmParameters: (utm: UtmParameters) => void;
   setBookingFailureContext: (ctx: BookingFailureContext) => void;
+  setZohoLeadId: (id: string | null) => void;
   resetForm: () => void;
   canProceed: (step: number) => boolean;
   getLatestFormData: () => { formData: Partial<CompleteFormData>; triggeredEvents: string[]; utmParameters: UtmParameters };
@@ -51,6 +53,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   utmParameters: {},
   eventCounter: 0,
   bookingFailureContext: { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null },
+  zohoLeadId: null,
   
   setStep: (step) => {
     set({ currentStep: step });
@@ -83,6 +86,7 @@ export const useFormStore = create<FormState>((set, get) => ({
   })),
   
   setBookingFailureContext: (ctx) => set({ bookingFailureContext: ctx }),
+  setZohoLeadId: (id) => set({ zohoLeadId: id }),
   
   resetForm: () => set({
     currentStep: 1,
@@ -94,7 +98,8 @@ export const useFormStore = create<FormState>((set, get) => ({
     triggeredEvents: [],
     utmParameters: {},
     eventCounter: 0,
-    bookingFailureContext: { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null }
+    bookingFailureContext: { failureType: null, failureReason: null, lastAttemptedDate: null, lastAttemptedSlot: null },
+    zohoLeadId: null
   }),
   
   incrementEventCounter: () => {

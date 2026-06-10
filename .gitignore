@@ -7,3 +7,4 @@ node_modules/
 
 # Context docs live outside repo in ../bch-agent-context-system/
 .context
+AGENTS.md
