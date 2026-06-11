@@ -25,5 +25,11 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:9998',
+        changeOrigin: true,
+      },
+    },
   }
 });

@@ -7,6 +7,7 @@ node_modules/
 
 # Context docs live outside this repo in ../.context/
 .context
+AGENTS.md
 
 # Local agent/editor state
 .claude/

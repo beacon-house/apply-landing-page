@@ -28,6 +28,7 @@ import {
   trackFormSubmission,
   saveFormDataIncremental 
 } from '@/lib/formTracking';
+import { createZohoLead, updateZohoLead, cancelPendingZohoUpdate } from '@/lib/zoho';
 import { InitialLeadCaptureData, QualifiedLeadData, DisqualifiedLeadData } from '@/types/form';
 import { debugLog, errorLog } from '@/lib/logger';
 
@@ -40,12 +41,14 @@ export default function FormContainer() {
     startTime,
     sessionId,
     triggeredEvents, // This is a snapshot, use () for latest
+    zohoLeadId,
     setStep,
     updateFormData,
     setSubmitting,
     setSubmitted,
     addTriggeredEvents,
     getLatestFormData, // Import the new getter
+    setZohoLeadId,
     bookingFailureContext
   } = useFormStore();
 
@@ -176,10 +179,30 @@ export default function FormContainer() {
         triggeredEvents: finalTriggeredEventsForPage1Save // Pass the latest events
       });
       trackFormStepComplete(1); // This tracks GA, not Meta Pixel
+
+      // Create Zoho lead for non-drop leads (parent filler, proceeding to Page 2)
+      if (leadCategory !== 'drop') {
+        try {
+          const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory }, false);
+          if (zohoId) setZohoLeadId(zohoId);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead creation failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // If form is filled by student, submit immediately regardless of other conditions
       if (data.formFillerType === 'student') {
         setSubmitting(true);
+        
+        // Create Zoho lead for student submissions (non-drop only)
+        if (leadCategory !== 'drop') {
+          try {
+            const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory }, true);
+            if (zohoId) setZohoLeadId(zohoId);
+          } catch (zohoErr: unknown) {
+            errorLog('Zoho lead creation failed for student:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+          }
+        }
         
         // Fire Meta Pixel events for student direct submission
         const studentCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
@@ -285,6 +308,16 @@ export default function FormContainer() {
 
       await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
+
+      // Cancel any pending debounced Zoho updates and send final update
+      cancelPendingZohoUpdate();
+      if (zohoLeadId) {
+        try {
+          await updateZohoLead(latestFormDataAfterUpdates, zohoLeadId, true);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // Track final submission to database
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
@@ -327,6 +360,16 @@ export default function FormContainer() {
 
       await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
+
+      // Cancel any pending debounced Zoho updates and send final update
+      cancelPendingZohoUpdate();
+      if (zohoLeadId) {
+        try {
+          await updateZohoLead(latestFormDataAfterUpdates, zohoLeadId, true);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // Track final submission to database
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);

@@ -34,6 +34,7 @@ import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { fireEmailCapturedEvent, fireTamParentLevel2Event } from '@/lib/metaPixelEvents';
 import { fireGA4EmailCapturedEvent, fireGA4TamParentLevel2Event } from '@/lib/ga4Events';
+import { scheduleDebouncedZohoUpdate } from '@/lib/zoho';
 
 // Define the correct field order for validation error focusing
 const FIELD_ORDER: (keyof QualifiedLeadData)[] = [
@@ -65,7 +66,7 @@ interface AvailabilitySlot {
 }
 
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
-  const { sessionId, formData: storeFormData, triggeredEvents, setBookingFailureContext } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId, setBookingFailureContext } = useFormStore();
 
   // All qualified leads (bch, lum-l1, lum-l2) route to Viswanathan
   const isBCH = ['bch', 'lum-l1', 'lum-l2'].includes(leadCategory);
@@ -351,6 +352,26 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
       });
     }
   }, [parentName, email, sessionId]);
+
+  // Debounced incremental Zoho update on key field changes
+  React.useEffect(() => {
+    if (!zohoLeadId) return;
+
+    // Only trigger when user has actually filled something meaningful
+    const hasMeaningfulData = selectedSlot || parentName || email;
+    if (!hasMeaningfulData) return;
+
+    const incrementalData = {
+      ...storeFormData,
+      selected_date: formSelectedDate || undefined,
+      selected_slot: selectedSlot || undefined,
+      parent_name: parentName || undefined,
+      parent_email: email || undefined,
+      lead_category: leadCategory,
+    };
+
+    scheduleDebouncedZohoUpdate(incrementalData, zohoLeadId, 3000);
+  }, [formSelectedDate, selectedSlot, parentName, email, zohoLeadId, leadCategory, storeFormData]);
 
   // Fire email captured event when user leaves email field with valid data
   const handleEmailBlur = () => {
