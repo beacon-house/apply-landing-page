@@ -207,7 +207,7 @@ function buildZohoPayload(
   // Academic
   if (data.current_grade) payload.Current_Grade = data.current_grade;
   if (data.school_name) payload.School_Name = data.school_name;
-  if (data.curriculum_type) payload.Curriculum_Type = data.curriculum_type;
+  if (data.curriculum_type) payload.Curriculum_Type_v1 = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
   // GPA/Percentage: Zoho fields typed as Decimal (changed from Integer)
   if (data.percentage_value != null)
@@ -223,7 +223,7 @@ function buildZohoPayload(
   // UTM
   if (data.utm_campaign) payload.Campaign = data.utm_campaign;
   if (data.utm_medium) payload.Medium = data.utm_medium;
-  if (data.utm_source) payload.Lead_Source = data.utm_source;
+  if (data.utm_source) payload.Lead_Source_v1 = data.utm_source;
   if (data.utm_term) payload.Term = data.utm_term;
   if (data.utm_content) payload.LP = data.utm_content;
   if (data.utm_id) payload["UTM ID"] = data.utm_id;
