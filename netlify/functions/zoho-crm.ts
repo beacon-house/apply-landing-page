@@ -223,7 +223,7 @@ function buildZohoPayload(
     payload.GPA_Value1 = Number(data.gpa_value) || null;
 
   // Location / tracking
-  // NOTE: Location maps to Modified_By (read-only system field) — cannot write. Skipping.
+  if (data.location) payload.Location_v1 = data.location;
   if (data.form_filler_type) payload.Form_Filler_Type = data.form_filler_type;
   if (data.lead_category) payload.Lead_Category = data.lead_category;
 
@@ -272,18 +272,18 @@ function buildZohoPayload(
   }
 
   // Session tracking
-  if (data.session_id) payload["Session ID"] = data.session_id;
+  if (data.session_id) payload.Session_ID = data.session_id;
 
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
     payload.Submission_Status = "submitted";
     payload.Lead_Status = "In Progress";
     // Clear sub-category on final submit (lead is no longer partial)
-    payload["Lead Subcategory"] = null;
+    payload.Lead_Subcategory = null;
   } else {
     payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
-    if (subcategory) payload["Lead Subcategory"] = subcategory;
+    if (subcategory) payload.Lead_Subcategory = subcategory;
   }
 
   return payload;
