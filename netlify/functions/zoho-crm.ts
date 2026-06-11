@@ -335,7 +335,6 @@ export const handler: Handler = async (event) => {
     if (step === 1) {
       // CREATE lead
       const payload = buildZohoPayload(formData, final);
-      console.log("Zoho create payload:", JSON.stringify(payload, null, 2));
 
       const res = await fetch(baseUrl, {
         method: "POST",
@@ -388,7 +387,6 @@ export const handler: Handler = async (event) => {
       // UPDATE lead
       const payload = buildZohoPayload(formData, final);
       payload.id = zohoLeadId;
-      console.log("Zoho update payload:", JSON.stringify(payload, null, 2));
 
       const res = await fetch(`${baseUrl}/${zohoLeadId}`, {
         method: "PUT",
