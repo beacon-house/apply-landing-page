@@ -204,7 +204,7 @@ function buildZohoPayload(
     maybePrefixTest(data.parent_name || data.student_name) || "Unknown";
 
   // Core contact
-  if (data.student_name) payload.Twitter = maybePrefixTest(data.student_name); // repurposed field
+  if (data.student_name) payload.Student_s_Name = maybePrefixTest(data.student_name); // repurposed field
   // Email: validate format before sending — Zoho rejects invalid emails
   if (data.parent_email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.parent_email))) {
     payload.Email = data.parent_email;
