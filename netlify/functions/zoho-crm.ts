@@ -204,8 +204,7 @@ function buildZohoPayload(
     maybePrefixTest(data.parent_name || data.student_name) || "Unknown";
 
   // Core contact
-  if (data.student_name)
-    payload.First_Name = maybePrefixTest(data.student_name);
+  if (data.student_name) payload.Twitter = maybePrefixTest(data.student_name); // repurposed field
   // Email: validate format before sending — Zoho rejects invalid emails
   if (data.parent_email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.parent_email))) {
     payload.Email = data.parent_email;
@@ -213,37 +212,37 @@ function buildZohoPayload(
   if (data.phone_number) payload.Phone = data.phone_number;
 
   // Academic
-  if (data.current_grade) payload.Current_Grade = Number(data.current_grade) || data.current_grade;
+  if (data.current_grade) payload.No_of_Employees = Number(data.current_grade) || null; // repurposed field
   if (data.school_name) payload.School_Name = data.school_name;
-  if (data.curriculum_type) payload.Curriculum_Type_v1 = data.curriculum_type;
+  if (data.curriculum_type) payload.Curriculum_Type1 = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
-  // GPA/Percentage: Zoho fields typed as Decimal (changed from Integer)
+  // GPA/Percentage: Zoho fields typed as Decimal
   if (data.percentage_value != null)
-    payload.Percentage_Value = Number(data.percentage_value) || null;
+    payload.Percentage_Value1 = Number(data.percentage_value) || null;
   if (data.gpa_value != null)
-    payload.GPA_Value = Number(data.gpa_value) || null;
+    payload.GPA_Value1 = Number(data.gpa_value) || null;
 
   // Location / tracking
-  if (data.location) payload.Location = data.location;
+  if (data.location) payload.Location_v1 = data.location;
   if (data.form_filler_type) payload.Form_Filler_Type = data.form_filler_type;
   if (data.lead_category) payload.Lead_Category = data.lead_category;
 
   // UTM & ad tracking
   if (data.utm_campaign) payload.Campaign = data.utm_campaign;
   if (data.utm_medium) payload.Medium = data.utm_medium;
-  if (data.utm_source) payload.Lead_Source_v1 = data.utm_source;
+  if (data.utm_source) payload.Lead_Source2 = data.utm_source;
   if (data.utm_term) payload.Term = Number(data.utm_term) || null;
   if (data.utm_content) payload.LP = data.utm_content;
-  if (data.utm_id) payload["UTM ID"] = Number(data.utm_id) || null;
+  if (data.utm_id) payload.UTM_ID = Number(data.utm_id) || null;
   if (data.campaign_id) payload.Campaign_ID = Number(data.campaign_id) || null;
   if (data.utm_adset) payload.Adset = data.utm_adset;
-  if (data.adset_id) payload.Adset_ID = Number(data.adset_id) || null;
+  if (data.adset_id) payload.Adest_ID = Number(data.adset_id) || null; // Zoho has typo "Adest"
   if (data.ad_id) payload.Ad_ID = Number(data.ad_id) || null;
   if (data.utm_placement) payload.Placement = data.utm_placement;
 
   // Scholarship & targets
   if (data.scholarship_requirement)
-    payload.Scholarship_Requirement = data.scholarship_requirement;
+    payload.Scholarship_Requirements = data.scholarship_requirement;
   if (data.target_geographies)
     payload.Target_Geographies = Array.isArray(data.target_geographies)
       ? data.target_geographies.join(", ")
@@ -268,26 +267,23 @@ function buildZohoPayload(
       if (ampm === "PM" && hour !== 12) hour += 12;
       if (ampm === "AM" && hour === 12) hour = 0;
       const hourStr = String(hour).padStart(2, "0");
-      payload.Time_Selected = `${isoDate}T${hourStr}:00:00`;
+      payload.Selected_Time = `${isoDate}T${hourStr}:00:00`;
     }
   }
 
   // Session tracking
-  if (data.session_id) payload["Session ID"] = data.session_id;
-
-  // Student name duplicate field (if layout has it)
-  if (data.student_name) payload["Student's_Name"] = maybePrefixTest(data.student_name);
+  if (data.session_id) payload.Session_ID = data.session_id;
 
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
     payload.Submission_Status = "submitted";
     payload.Lead_Status = "In Progress";
     // Clear sub-category on final submit (lead is no longer partial)
-    payload["Lead Subcategory"] = null;
+    payload.Lead_Subcategory = null;
   } else {
     payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
-    if (subcategory) payload["Lead Subcategory"] = subcategory;
+    if (subcategory) payload.Lead_Subcategory = subcategory;
   }
 
   return payload;
