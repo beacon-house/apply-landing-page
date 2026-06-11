@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFormStore } from '@/store/formStore';
 import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
+import { fireGA4CTAClickEvent } from '@/lib/ga4Events';
 
 interface HeaderProps {
   showCTA?: boolean;
@@ -30,6 +31,7 @@ export function Header({ showCTA = true }: HeaderProps) {
     // Fire Header CTA event
     const ctaEvents = fireCTAClickEvent('header');
     addTriggeredEvents(ctaEvents);
+    fireGA4CTAClickEvent('header');
     
     navigate('/application-form');
   };

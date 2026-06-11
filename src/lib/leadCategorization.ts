@@ -6,7 +6,7 @@
  *
  * Changes made:
  * - Implemented lead categorization rules as specified
- * - Added global override rules (student forms, spam detection, etc.)
+ * - Added global override rules (student forms, spam detection → drop, etc.)
  * - Added qualified lead categorization (BCH, Luminaire L1, Luminaire L2)
  * - Added Indian curriculum (CBSE/ICSE/State_Boards) specific rules:
  *   - Grades 8-10 with partial scholarship → nurture
@@ -16,6 +16,7 @@
  * - ROW-only destination override: Users selecting ONLY "Rest of World" → nurture
  * - Non-US, Non-NeedGuidance grades 8-9 override: If US and "Need Guidance" are
  *   not selected and grade is 8 or 9 → nurture (filters young non-US-focused leads)
+ * - Grade 8 Jan-Jun seasonal override: otherwise qualified parent leads → nurture
  */
 
 import { LeadCategory } from '@/types/form';
@@ -30,6 +31,22 @@ const isIndianCurriculum = (curriculumType: string): boolean => {
 };
 
 /**
+ * Checks whether an evaluation date falls in Jan-Jun in Asia/Kolkata.
+ * This keeps seasonal lead rules aligned with the Beacon House operating timezone.
+ */
+export const isJanToJunInKolkata = (evaluationDate: Date = new Date()): boolean => {
+  const monthPart = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    month: 'numeric',
+  })
+    .formatToParts(evaluationDate)
+    .find(part => part.type === 'month');
+
+  const month = Number(monthPart?.value);
+  return month >= 1 && month <= 6;
+};
+
+/**
  * Determines the lead category based on new categorization logic
  * 
  * Categories:
@@ -37,7 +54,7 @@ const isIndianCurriculum = (curriculumType: string): boolean => {
  * 2. lum-l1 - Luminaire Level 1 leads
  * 3. lum-l2 - Luminaire Level 2 leads
  * 4. nurture - Default category for development
- * 5. drop - Grade 7 or below
+ * 5. drop - Grade 7 or below OR spam detection (GPA=10 / percentage=100)
  */
 export const determineLeadCategory = (
   currentGrade: string,
@@ -52,7 +69,8 @@ export const determineLeadCategory = (
   targetUniversities?: string,
   supportLevel?: string,
   extendedNurtureData?: any,
-  targetGeographies?: string[]
+  targetGeographies?: string[],
+  evaluationDate: Date = new Date()
 ): LeadCategory => {
   let determinedCategory: LeadCategory;
   
@@ -62,9 +80,10 @@ export const determineLeadCategory = (
   if (formFillerType === 'student') {
     determinedCategory = 'nurture';
   }
-  // 2. Spam detection: GPA = 10 OR percentage = 100 → nurture
+  // 2. Spam detection: GPA = 10 OR percentage = 100 → drop
+  // Spam parents are treated like drop — no Page 2, no email capture (DT-001)
   else if (gpaValue === "10" || percentageValue === "100") {
-    determinedCategory = 'nurture';
+    determinedCategory = 'drop';
   }
   // 3. Full scholarship requirement → nurture
   else if (scholarshipRequirement === 'full_scholarship') {
@@ -100,6 +119,12 @@ export const determineLeadCategory = (
              targetGeographies &&
              !targetGeographies.includes('US') &&
              !targetGeographies.includes('Need Guidance')) {
+      determinedCategory = 'nurture';
+    }
+
+    // Grade 8 Jan-Jun seasonal rule → nurture
+    // From July onward, Grade 8 follows the standard BCH qualification branch.
+    else if (currentGrade === '8' && isJanToJunInKolkata(evaluationDate)) {
       determinedCategory = 'nurture';
     }
 

@@ -5,6 +5,12 @@ node_modules/
 # Local Netlify folder
 .netlify
 
-# Context docs live outside repo in ../bch-agent-context-system/
+# Context docs live outside this repo in ../.context/
 .context
 AGENTS.md
+
+# Local agent/editor state
+.claude/
+.cursor/debug.log
+supabase/.temp/
+.DS_Store

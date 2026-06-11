@@ -346,6 +346,26 @@ export const fireLeadClassificationEvents = (formData: Partial<CompleteFormData>
   return firedEvents;
 };
 
+// TAM PARENT LEVEL 2 EVENT — fires when non-spam TAM parent enters email on Page 2A
+// This is a deeper-funnel, higher-friction event than apply_tam_prnt for Meta optimization.
+// Structural guarantee: only qualified parents (bch/lum-l1/lum-l2) see Page 2A with email capture.
+// Spam parents are now categorized as drop and never reach Page 2 (DT-001).
+export const fireTamParentLevel2Event = (formData: Partial<CompleteFormData>): string[] => {
+  const firedEvents: string[] = [];
+  const isSpam = isSpamDetected(formData.gpaValue, formData.percentageValue);
+  const isParent = formData.formFillerType === 'parent';
+
+  if (isParent && !isSpam
+      && ['7_below', '8', '9', '10', '11', '12'].includes(formData.currentGrade || '')
+      && formData.curriculumType !== 'State_Boards'
+      && formData.email) {
+    trackMetaPixelEvent('apply_tam_prnt_level2', formData);
+    firedEvents.push('apply_tam_prnt_level2');
+  }
+
+  return firedEvents;
+};
+
 // GENERAL FUNNEL EVENTS (7 events)
 export const firePageViewEvent = (): string[] => {
   trackMetaPixelEvent('apply_page_view');

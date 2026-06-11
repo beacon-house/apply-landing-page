@@ -22,6 +22,11 @@ export interface UtmParameters {
   utm_term?: string;
   utm_content?: string;
   utm_id?: string;
+  campaign_id?: string;
+  utm_adset?: string;
+  adset_id?: string;
+  ad_id?: string;
+  utm_placement?: string;
 }
 
 // Base form interfaces

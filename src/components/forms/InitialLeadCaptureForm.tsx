@@ -43,6 +43,7 @@ import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { firePhoneCapturedEvent } from '@/lib/metaPixelEvents';
+import { fireGA4PhoneCapturedEvent } from '@/lib/ga4Events';
 
 interface InitialLeadCaptureFormProps {
   onSubmit: (data: InitialLeadCaptureData) => void;
@@ -142,6 +143,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
         countryCode: countryCode || '+91',
         location: location || undefined
       });
+      fireGA4PhoneCapturedEvent();
       setHasPhoneCaptureEventFired(true);
       debugLog('📱 Phone captured event fired:', { phoneNumber: phoneValue, countryCode, location });
     }
@@ -398,7 +400,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
           </div>
 
           <div className="space-y-2">
-            <Label>Grade in Academic Year 25-26 <span className="text-red-500">*</span></Label>
+            <Label>Grade in Academic Year 26-27 <span className="text-red-500">*</span></Label>
             <Controller
               name="currentGrade"
               control={control}
@@ -408,7 +410,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
                     "h-12 bg-white",
                     errors.currentGrade ? 'border-red-500 focus:border-red-500' : ''
                   )} data-field="currentGrade">
-                    <SelectValue placeholder="Select Grade in Academic Year 25-26" />
+                    <SelectValue placeholder="Select Grade in Academic Year 26-27" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="12">Grade 12</SelectItem>

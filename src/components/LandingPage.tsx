@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { Header } from './Header';
 import { useFormStore } from '@/store/formStore';
 import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
+import { fireGA4CTAClickEvent } from '@/lib/ga4Events';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function LandingPage() {
     // Fire Hero CTA event
     const ctaEvents = fireCTAClickEvent('hero');
     addTriggeredEvents(ctaEvents);
+    fireGA4CTAClickEvent('hero');
     
     navigate('/application-form');
   };

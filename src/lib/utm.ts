@@ -30,6 +30,11 @@ export const getUtmParametersFromUrl = (): UtmParameters => {
     if (params.has('utm_term')) utm.utm_term = params.get('utm_term') || undefined;
     if (params.has('utm_content')) utm.utm_content = params.get('utm_content') || undefined;
     if (params.has('utm_id')) utm.utm_id = params.get('utm_id') || undefined;
+    if (params.has('campaign_id')) utm.campaign_id = params.get('campaign_id') || undefined;
+    if (params.has('utm_adset')) utm.utm_adset = params.get('utm_adset') || undefined;
+    if (params.has('adset_id')) utm.adset_id = params.get('adset_id') || undefined;
+    if (params.has('ad_id')) utm.ad_id = params.get('ad_id') || undefined;
+    if (params.has('utm_placement')) utm.utm_placement = params.get('utm_placement') || undefined;
     
     // Log extracted UTM parameters for debugging
     const hasUtm = Object.keys(utm).length > 0;
@@ -69,6 +74,11 @@ export const formatUtmForLogging = (utm: UtmParameters): string => {
   if (utm.utm_term) parts.push(`term: ${utm.utm_term}`);
   if (utm.utm_content) parts.push(`content: ${utm.utm_content}`);
   if (utm.utm_id) parts.push(`id: ${utm.utm_id}`);
+  if (utm.campaign_id) parts.push(`campaign_id: ${utm.campaign_id}`);
+  if (utm.utm_adset) parts.push(`adset: ${utm.utm_adset}`);
+  if (utm.adset_id) parts.push(`adset_id: ${utm.adset_id}`);
+  if (utm.ad_id) parts.push(`ad_id: ${utm.ad_id}`);
+  if (utm.utm_placement) parts.push(`placement: ${utm.utm_placement}`);
   
   return parts.length > 0 ? parts.join(', ') : 'No UTM parameters';
 };

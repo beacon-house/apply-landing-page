@@ -32,7 +32,8 @@ import { useFormStore } from '@/store/formStore';
 import type { BookingFailureContext } from '@/types/form';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
-import { fireEmailCapturedEvent } from '@/lib/metaPixelEvents';
+import { fireEmailCapturedEvent, fireTamParentLevel2Event } from '@/lib/metaPixelEvents';
+import { fireGA4EmailCapturedEvent, fireGA4TamParentLevel2Event } from '@/lib/ga4Events';
 import { scheduleDebouncedZohoUpdate } from '@/lib/zoho';
 
 // Define the correct field order for validation error focusing
@@ -388,6 +389,23 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
         phoneNumber: storeFormData.phoneNumber,
         countryCode: storeFormData.countryCode
       });
+      fireGA4EmailCapturedEvent();
+
+      // Fire TAM parent level2 event — non-spam TAM parent entered email on Page 2A (DT-001)
+      const level2Events = fireTamParentLevel2Event({
+        ...storeFormData,
+        email: emailValue,
+        parentName: parentNameValue || undefined,
+      });
+      fireGA4TamParentLevel2Event({
+        ...storeFormData,
+        email: emailValue,
+        parentName: parentNameValue || undefined,
+      });
+      if (level2Events.length > 0) {
+        debugLog('🎯 TAM parent level2 event fired:', { email: emailValue });
+      }
+
       setHasEmailCaptureEventFired(true);
       debugLog('📧 Email captured event fired:', { email: emailValue, parentName: parentNameValue });
     }
