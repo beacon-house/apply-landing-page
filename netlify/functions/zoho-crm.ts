@@ -133,6 +133,11 @@ function normalizeFormData(
       if (utm.utm_term) result.utm_term = utm.utm_term;
       if (utm.utm_content) result.utm_content = utm.utm_content;
       if (utm.utm_id) result.utm_id = utm.utm_id;
+      if (utm.campaign_id) result.campaign_id = utm.campaign_id;
+      if (utm.utm_adset) result.utm_adset = utm.utm_adset;
+      if (utm.adset_id) result.adset_id = utm.adset_id;
+      if (utm.ad_id) result.ad_id = utm.ad_id;
+      if (utm.utm_placement) result.utm_placement = utm.utm_placement;
       continue;
     }
 
@@ -201,11 +206,14 @@ function buildZohoPayload(
   // Core contact
   if (data.student_name)
     payload.First_Name = maybePrefixTest(data.student_name);
-  if (data.parent_email) payload.Email = data.parent_email;
-  if (data.phone_number) payload.Mobile = data.phone_number;
+  // Email: validate format before sending — Zoho rejects invalid emails
+  if (data.parent_email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.parent_email))) {
+    payload.Email = data.parent_email;
+  }
+  if (data.phone_number) payload.Phone = data.phone_number;
 
   // Academic
-  if (data.current_grade) payload.Current_Grade = data.current_grade;
+  if (data.current_grade) payload.Current_Grade = Number(data.current_grade) || data.current_grade;
   if (data.school_name) payload.School_Name = data.school_name;
   if (data.curriculum_type) payload.Curriculum_Type_v1 = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
@@ -220,13 +228,18 @@ function buildZohoPayload(
   if (data.form_filler_type) payload.Form_Filler_Type = data.form_filler_type;
   if (data.lead_category) payload.Lead_Category = data.lead_category;
 
-  // UTM
+  // UTM & ad tracking
   if (data.utm_campaign) payload.Campaign = data.utm_campaign;
   if (data.utm_medium) payload.Medium = data.utm_medium;
   if (data.utm_source) payload.Lead_Source_v1 = data.utm_source;
-  if (data.utm_term) payload.Term = data.utm_term;
+  if (data.utm_term) payload.Term = Number(data.utm_term) || null;
   if (data.utm_content) payload.LP = data.utm_content;
-  if (data.utm_id) payload["UTM ID"] = data.utm_id;
+  if (data.utm_id) payload["UTM ID"] = Number(data.utm_id) || null;
+  if (data.campaign_id) payload.Campaign_ID = Number(data.campaign_id) || null;
+  if (data.utm_adset) payload.Adset = data.utm_adset;
+  if (data.adset_id) payload.Adset_ID = Number(data.adset_id) || null;
+  if (data.ad_id) payload.Ad_ID = Number(data.ad_id) || null;
+  if (data.utm_placement) payload.Placement = data.utm_placement;
 
   // Scholarship & targets
   if (data.scholarship_requirement)
@@ -268,9 +281,11 @@ function buildZohoPayload(
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
     payload.Submission_Status = "submitted";
+    payload.Lead_Status = "In Progress";
     // Clear sub-category on final submit (lead is no longer partial)
     payload["Lead Subcategory"] = null;
   } else {
+    payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
     if (subcategory) payload["Lead Subcategory"] = subcategory;
   }
