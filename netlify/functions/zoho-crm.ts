@@ -85,7 +85,40 @@ function maybePrefixTest(value: string | null | undefined): string | null {
   return value;
 }
 
-function buildZohoPayload(data: Record<string, unknown>): Record<string, unknown> {
+function computeLeadSubcategory(
+  data: Record<string, unknown>,
+  isFinalSubmit: boolean
+): string | null {
+  const category = String(data.lead_category || "");
+
+  // Final submit: no sub-category needed
+  if (isFinalSubmit) return null;
+
+  const hasSlot = Boolean(data.selected_slot && data.selected_date);
+  const hasContact = Boolean(data.parent_email || data.parent_name);
+
+  if (category === "nurture") {
+    if (!hasContact) return "partial-fill-nurture";
+    return null;
+  }
+
+  if (["bch", "lum-l1", "lum-l2"].includes(category)) {
+    if (hasSlot && !hasContact) {
+      return `partial-fill-${category}-slotpicked`;
+    }
+    if (hasSlot && hasContact) {
+      return `partial-fill-${category}-didnotsubmit`;
+    }
+    return `partial-fill-${category}`;
+  }
+
+  return null;
+}
+
+function buildZohoPayload(
+  data: Record<string, unknown>,
+  isFinalSubmit: boolean
+): Record<string, unknown> {
   const layoutId = process.env.ZOHO_LEADS_LAYOUT_ID;
 
   const payload: Record<string, unknown> = {};
@@ -144,6 +177,16 @@ function buildZohoPayload(data: Record<string, unknown>): Record<string, unknown
   // Student name duplicate field (if layout has it)
   if (data.student_name) payload["Student's_Name"] = maybePrefixTest(data.student_name);
 
+  // Submission status & sub-category (abandonment tracking)
+  if (isFinalSubmit) {
+    payload.Submission_Status = "submitted";
+    // Clear sub-category on final submit (lead is no longer partial)
+    payload["Lead Subcategory"] = null;
+  } else {
+    const subcategory = computeLeadSubcategory(data, false);
+    if (subcategory) payload["Lead Subcategory"] = subcategory;
+  }
+
   return payload;
 }
 
@@ -162,7 +205,8 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { step, zohoLeadId, ...formData } = body;
+    const { step, zohoLeadId, isFinalSubmit, ...formData } = body;
+    const final = Boolean(isFinalSubmit);
 
     if (!step || ![1, 2].includes(step)) {
       return {
@@ -190,7 +234,7 @@ export const handler: Handler = async (event) => {
 
     if (step === 1) {
       // CREATE lead
-      const payload = buildZohoPayload(formData);
+      const payload = buildZohoPayload(formData, final);
 
       const res = await fetch(baseUrl, {
         method: "POST",
@@ -216,7 +260,8 @@ export const handler: Handler = async (event) => {
       }
 
       const createdId = result.data[0].details?.id;
-      console.log(`Zoho lead created: ${createdId} | category: ${formData.lead_category}`);
+      const subcategory = computeLeadSubcategory(formData, final);
+      console.log(`Zoho lead created: ${createdId} | category: ${formData.lead_category}${subcategory ? ` | subcategory: ${subcategory}` : ""}`);
 
       return {
         statusCode: 200,
@@ -240,7 +285,7 @@ export const handler: Handler = async (event) => {
       }
 
       // UPDATE lead
-      const payload = buildZohoPayload(formData);
+      const payload = buildZohoPayload(formData, final);
       payload.id = zohoLeadId;
 
       const res = await fetch(`${baseUrl}/${zohoLeadId}`, {
@@ -266,7 +311,8 @@ export const handler: Handler = async (event) => {
         };
       }
 
-      console.log(`Zoho lead updated: ${zohoLeadId}`);
+      const subcategory = computeLeadSubcategory(formData, final);
+      console.log(`Zoho lead updated: ${zohoLeadId}${final ? " | FINAL SUBMIT" : ""}${subcategory ? ` | subcategory: ${subcategory}` : ""}`);
 
       return {
         statusCode: 200,
