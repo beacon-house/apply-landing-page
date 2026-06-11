@@ -209,10 +209,12 @@ function buildZohoPayload(
   if (data.school_name) payload.School_Name = data.school_name;
   if (data.curriculum_type) payload.Curriculum_Type = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
-  if (data.percentage_value != null)
-    payload.Percentage_Value = Number(data.percentage_value) || null;
-  if (data.gpa_value != null)
-    payload.GPA_Value = Number(data.gpa_value) || null;
+  // GPA/Percentage: Zoho fields are typed as Integer, but values are often decimals (3.5, 85.2).
+  // Skip sending until Zoho field types are changed to Decimal.
+  // if (data.percentage_value != null)
+  //   payload.Percentage_Value = Number(data.percentage_value) || null;
+  // if (data.gpa_value != null)
+  //   payload.GPA_Value = Number(data.gpa_value) || null;
 
   // Location / tracking
   if (data.location) payload.Location = data.location;
