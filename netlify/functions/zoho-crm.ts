@@ -104,6 +104,20 @@ const CAMEL_TO_SNAKE: Record<string, string> = {
   leadCategory: "lead_category",
 };
 
+/** Strip control characters that break JSON parsing (newlines, tabs, etc.) */
+function sanitizeString(value: unknown): unknown {
+  if (typeof value === "string") {
+    return value.replace(/[\x00-\x1F\x7F]/g, " ").trim();
+  }
+  if (Array.isArray(value)) return value.map(sanitizeString);
+  if (value && typeof value === "object") {
+    const clean: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) clean[k] = sanitizeString(v);
+    return clean;
+  }
+  return value;
+}
+
 function normalizeFormData(
   data: Record<string, unknown>
 ): Record<string, unknown> {
@@ -123,7 +137,7 @@ function normalizeFormData(
     }
 
     const mappedKey = CAMEL_TO_SNAKE[key] || key;
-    result[mappedKey] = value;
+    result[mappedKey] = sanitizeString(value);
   }
 
   return result;
@@ -196,8 +210,9 @@ function buildZohoPayload(
   if (data.curriculum_type) payload.Curriculum_Type = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
   if (data.percentage_value != null)
-    payload.Percentage_Value = data.percentage_value;
-  if (data.gpa_value != null) payload.GPA_Value = data.gpa_value;
+    payload.Percentage_Value = Number(data.percentage_value) || null;
+  if (data.gpa_value != null)
+    payload.GPA_Value = Number(data.gpa_value) || null;
 
   // Location / tracking
   if (data.location) payload.Location = data.location;
