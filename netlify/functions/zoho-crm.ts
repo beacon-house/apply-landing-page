@@ -209,12 +209,11 @@ function buildZohoPayload(
   if (data.school_name) payload.School_Name = data.school_name;
   if (data.curriculum_type) payload.Curriculum_Type = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
-  // GPA/Percentage: Zoho fields are typed as Integer, but values are often decimals (3.5, 85.2).
-  // Skip sending until Zoho field types are changed to Decimal.
-  // if (data.percentage_value != null)
-  //   payload.Percentage_Value = Number(data.percentage_value) || null;
-  // if (data.gpa_value != null)
-  //   payload.GPA_Value = Number(data.gpa_value) || null;
+  // GPA/Percentage: Zoho fields typed as Decimal (changed from Integer)
+  if (data.percentage_value != null)
+    payload.Percentage_Value = Number(data.percentage_value) || null;
+  if (data.gpa_value != null)
+    payload.GPA_Value = Number(data.gpa_value) || null;
 
   // Location / tracking
   if (data.location) payload.Location = data.location;
@@ -238,8 +237,27 @@ function buildZohoPayload(
       : data.target_geographies;
 
   // Counselling (Page 2)
-  if (data.selected_date) payload.Selected_Date = data.selected_date;
-  if (data.selected_slot) payload.Time_Selected = data.selected_slot;
+  // Parse selected_date: form stores "Wednesday, June 11, 2026" → Zoho needs "2026-06-11"
+  let isoDate: string | null = null;
+  if (data.selected_date) {
+    const parsed = new Date(String(data.selected_date));
+    if (!isNaN(parsed.getTime())) isoDate = parsed.toISOString().split("T")[0];
+  }
+  if (isoDate) payload.Selected_Date = isoDate;
+
+  // Parse selected_slot: form stores "10 AM" / "3 PM" → Zoho date/time needs "2026-06-11T10:00:00"
+  if (data.selected_slot && isoDate) {
+    const slotStr = String(data.selected_slot).trim();
+    const match = slotStr.match(/^(\d{1,2})\s*(AM|PM)$/i);
+    if (match) {
+      let hour = parseInt(match[1], 10);
+      const ampm = match[2].toUpperCase();
+      if (ampm === "PM" && hour !== 12) hour += 12;
+      if (ampm === "AM" && hour === 12) hour = 0;
+      const hourStr = String(hour).padStart(2, "0");
+      payload.Time_Selected = `${isoDate}T${hourStr}:00:00`;
+    }
+  }
 
   // Session tracking
   if (data.session_id) payload["Session ID"] = data.session_id;
