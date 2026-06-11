@@ -76,6 +76,59 @@ async function refreshZohoToken(): Promise<{
   };
 }
 
+/**
+ * Frontend sends camelCase (Zustand store convention).
+ * buildZohoPayload expects snake_case (DB convention).
+ * This explicit mapping converts known camelCase keys at the boundary.
+ * Already-snake_case keys (lead_category, utm_*) pass through unchanged.
+ */
+const CAMEL_TO_SNAKE: Record<string, string> = {
+  formFillerType: "form_filler_type",
+  studentName: "student_name",
+  currentGrade: "current_grade",
+  curriculumType: "curriculum_type",
+  gradeFormat: "grade_format",
+  gpaValue: "gpa_value",
+  percentageValue: "percentage_value",
+  schoolName: "school_name",
+  scholarshipRequirement: "scholarship_requirement",
+  targetGeographies: "target_geographies",
+  phoneNumber: "phone_number",
+  countryCode: "country_code",
+  parentName: "parent_name",
+  parentEmail: "parent_email",
+  email: "parent_email",
+  selectedDate: "selected_date",
+  selectedSlot: "selected_slot",
+  sessionId: "session_id",
+  leadCategory: "lead_category",
+};
+
+function normalizeFormData(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    // Flatten nested utmParameters object to top-level utm_* keys
+    if (key === "utmParameters" && value && typeof value === "object") {
+      const utm = value as Record<string, unknown>;
+      if (utm.utm_source) result.utm_source = utm.utm_source;
+      if (utm.utm_medium) result.utm_medium = utm.utm_medium;
+      if (utm.utm_campaign) result.utm_campaign = utm.utm_campaign;
+      if (utm.utm_term) result.utm_term = utm.utm_term;
+      if (utm.utm_content) result.utm_content = utm.utm_content;
+      if (utm.utm_id) result.utm_id = utm.utm_id;
+      continue;
+    }
+
+    const mappedKey = CAMEL_TO_SNAKE[key] || key;
+    result[mappedKey] = value;
+  }
+
+  return result;
+}
+
 function maybePrefixTest(value: string | null | undefined): string | null {
   if (!value) return null;
   const env = process.env.VITE_ENVIRONMENT?.trim();
@@ -205,7 +258,8 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { step, zohoLeadId, isFinalSubmit, ...formData } = body;
+    const { step, zohoLeadId, isFinalSubmit, ...rawFormData } = body;
+    const formData = normalizeFormData(rawFormData);
     const final = Boolean(isFinalSubmit);
 
     if (!step || ![1, 2].includes(step)) {
