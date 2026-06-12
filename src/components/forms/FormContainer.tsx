@@ -38,6 +38,7 @@ export default function FormContainer() {
     formData, // This is a snapshot, use () for latest
     isSubmitting,
     isSubmitted,
+    isHydrated,
     startTime,
     sessionId,
     triggeredEvents, // This is a snapshot, use () for latest
@@ -49,6 +50,7 @@ export default function FormContainer() {
     addTriggeredEvents,
     getLatestFormData, // Import the new getter
     setZohoLeadId,
+    hydrateFromSupabase,
     bookingFailureContext
   } = useFormStore();
 
@@ -61,8 +63,15 @@ export default function FormContainer() {
   const [showEvaluationAnimation, setShowEvaluationAnimation] = useState(false);
   const [evaluatedLeadCategory, setEvaluatedLeadCategory] = useState<string | null>(null);
   
-  // Track form start when component mounts
+  // Hydrate form state from Supabase on mount (survives page refresh)
   useEffect(() => {
+    hydrateFromSupabase();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Track form start when component mounts (skip if recovering a session)
+  useEffect(() => {
+    if (!isHydrated) return; // Wait for hydration to complete
     const trackFormStart = async () => {
       try {
         // Use getLatestFormData to ensure we have the most current state for initial save
