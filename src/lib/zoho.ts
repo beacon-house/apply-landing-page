@@ -163,3 +163,41 @@ export function cancelPendingZohoUpdate(): void {
   }
   pendingUpdate = null;
 }
+
+/**
+ * Fire a "parting shot" update to Zoho when the user is leaving the page.
+ * Uses fetch with keepalive (or sendBeacon fallback) to ensure the request
+ * survives page unload. Intended for beforeunload/visibilitychange handlers.
+ * Must be synchronous-calling (no await) to work within page exit events.
+ */
+export function fireAbandonmentUpdate(
+  data: Record<string, unknown>,
+  zohoLeadId: string
+): void {
+  const payload: Record<string, unknown> = { step: 2, ...data, zohoLeadId };
+
+  // Tag as abandoned (not final submit) so sub-category gets set
+  payload.isFinalSubmit = false;
+
+  try {
+    const body = JSON.stringify(payload);
+
+    // Prefer fetch with keepalive (more reliable, supports headers)
+    if (typeof fetch !== "undefined") {
+      fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      }).catch(() => {
+        // Silently ignore — page is unloading
+      });
+    } else if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      // Fallback: sendBeacon (no custom headers, but survives unload)
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(FUNCTION_URL, blob);
+    }
+  } catch {
+    // Silently ignore — page is unloading
+  }
+}

@@ -28,7 +28,7 @@ import {
   trackFormSubmission,
   saveFormDataIncremental 
 } from '@/lib/formTracking';
-import { createZohoLead, updateZohoLead, cancelPendingZohoUpdate } from '@/lib/zoho';
+import { createZohoLead, updateZohoLead, cancelPendingZohoUpdate, fireAbandonmentUpdate } from '@/lib/zoho';
 import { InitialLeadCaptureData, QualifiedLeadData, DisqualifiedLeadData } from '@/types/form';
 import { debugLog, errorLog } from '@/lib/logger';
 
@@ -67,6 +67,29 @@ export default function FormContainer() {
   useEffect(() => {
     hydrateFromSupabase();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fire abandonment update to Zoho when user leaves mid-form
+  useEffect(() => {
+    const handlePageExit = () => {
+      const { zohoLeadId: leadId } = useFormStore.getState();
+      if (!leadId) return; // No Zoho record to update
+
+      const { formData: latestData } = useFormStore.getState().getLatestFormData();
+      fireAbandonmentUpdate(latestData, leadId);
+    };
+
+    const onBeforeUnload = () => handlePageExit();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') handlePageExit();
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   // Track form start when component mounts (skip if recovering a session)
@@ -189,8 +212,9 @@ export default function FormContainer() {
       });
       trackFormStepComplete(1); // This tracks GA, not Meta Pixel
 
-      // Create Zoho lead for non-drop leads (parent filler, proceeding to Page 2)
-      if (leadCategory !== 'drop') {
+      // Create Zoho lead for non-drop parent fillers (proceeding to Page 2)
+      // Students are handled separately below — they submit immediately with isFinalSubmit=true
+      if (leadCategory !== 'drop' && data.formFillerType !== 'student') {
         try {
           const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory }, false);
           if (zohoId) setZohoLeadId(zohoId);

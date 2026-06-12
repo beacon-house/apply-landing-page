@@ -199,9 +199,11 @@ function buildZohoPayload(
     payload.Layout = { id: layoutId };
   }
 
-  // Mandatory field
+  // Mandatory field: prefix student name for clarity, replace with parent name when available
   payload.Last_Name =
-    maybePrefixTest(data.parent_name || data.student_name) || "Unknown";
+    maybePrefixTest(data.parent_name) ||
+    (data.student_name ? `Student: ${maybePrefixTest(data.student_name)}` : null) ||
+    "Unknown";
 
   // Core contact
   if (data.student_name) payload.Student_s_Name = maybePrefixTest(data.student_name); // repurposed field
@@ -212,7 +214,7 @@ function buildZohoPayload(
   if (data.phone_number) payload.Phone = data.phone_number;
 
   // Academic
-  if (data.current_grade) payload.No_of_Employees = Number(data.current_grade) || null; // repurposed field
+  if (data.current_grade) payload.Current_Grade_v1 = Number(data.current_grade) || null;
   if (data.school_name) payload.School_Name = data.school_name;
   if (data.curriculum_type) payload.Curriculum_Type1 = data.curriculum_type;
   if (data.grade_format) payload.Grade_Format = data.grade_format;
@@ -333,6 +335,34 @@ export const handler: Handler = async (event) => {
     }
 
     if (step === 1) {
+      // Duplicate check: search for existing lead with same Session_ID
+      if (formData.session_id) {
+        try {
+          const searchUrl = `${baseUrl}/search?criteria=(Session_ID:equals:${formData.session_id})`;
+          const searchRes = await fetch(searchUrl, {
+            headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
+          });
+          const searchData = await searchRes.json();
+
+          if (searchData.data?.length > 0) {
+            const existingId = searchData.data[0].id;
+            console.log(`Zoho duplicate found for session ${formData.session_id}: ${existingId}, returning existing ID`);
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                success: true,
+                zohoLeadId: existingId,
+                recovered: true,
+              }),
+            };
+          }
+        } catch (searchErr) {
+          console.error("Zoho duplicate search failed (proceeding with create):", searchErr);
+          // Non-blocking — proceed to create if search fails
+        }
+      }
+
       // CREATE lead
       const payload = buildZohoPayload(formData, final);
 
