@@ -199,67 +199,63 @@ function buildZohoPayload(
     payload.Layout = { id: layoutId };
   }
 
-  // Mandatory field: prefix student name for clarity, replace with parent name when available
+  // Mandatory field: Last_Name is system mandatory; code populates with parent_name
   payload.Last_Name =
-    maybePrefixTest(data.parent_name) ||
-    (data.student_name ? `Student: ${maybePrefixTest(data.student_name)}` : null) ||
+    maybePrefixTest(data.parent_name as string | undefined) ||
+    (data.student_name ? `Student: ${maybePrefixTest(data.student_name as string | undefined)}` : null) ||
     "Unknown";
 
-  // Core contact
-  if (data.student_name) payload.Student_s_Name = maybePrefixTest(data.student_name); // repurposed field
-  // Email: validate format before sending — Zoho rejects invalid emails
-  if (data.parent_email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.parent_email))) {
-    payload.Email = data.parent_email;
+  // Core contact (system fields Email, Phone, Lead_Status kept as-is for CRM functionality)
+  if (data.parent_name) payload.Parent_Name_v2 = maybePrefixTest(data.parent_name as string | undefined);
+  if (data.student_name) payload.Student_Name_v2 = maybePrefixTest(data.student_name as string | undefined);
+  const parentEmail = data.parent_email as string | undefined;
+  if (parentEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) {
+    payload.Email = parentEmail;
   }
-  if (data.phone_number) payload.Phone = data.phone_number;
+  if (data.phone_number) payload.Phone = data.phone_number as string;
 
   // Academic
-  if (data.current_grade) payload.Current_Grade_v1 = Number(data.current_grade) || null;
-  if (data.school_name) payload.School_Name = data.school_name;
-  if (data.curriculum_type) payload.Curriculum_Type1 = data.curriculum_type;
-  if (data.grade_format) payload.Grade_Format = data.grade_format;
-  // GPA/Percentage: Zoho fields typed as Decimal
-  if (data.percentage_value != null)
-    payload.Percentage_Value1 = Number(data.percentage_value) || null;
-  if (data.gpa_value != null)
-    payload.GPA_Value1 = Number(data.gpa_value) || null;
+  if (data.current_grade) payload.Current_Grade_v2 = data.current_grade;
+  if (data.school_name) payload.School_Name_v2 = data.school_name;
+  if (data.curriculum_type) payload.Curriculum_Type_v2 = data.curriculum_type;
+  if (data.grade_format) payload.Grade_Format_v2 = data.grade_format;
+  if (data.percentage_value != null) payload.Percentage_Value_v2 = data.percentage_value;
+  if (data.gpa_value != null) payload.GPA_Value_v2 = data.gpa_value;
 
   // Location / tracking
-  if (data.location) payload.Location_v1 = data.location;
-  if (data.form_filler_type) payload.Form_Filler_Type = data.form_filler_type;
-  if (data.lead_category) payload.Lead_Category = data.lead_category;
+  if (data.location) payload.Location_v2 = data.location;
+  if (data.form_filler_type) payload.Form_Filler_Type_v2 = data.form_filler_type;
+  if (data.lead_category) payload.Lead_Category_v2 = data.lead_category;
 
   // UTM & ad tracking
-  if (data.utm_campaign) payload.Campaign = data.utm_campaign;
-  if (data.utm_medium) payload.Medium = data.utm_medium;
-  if (data.utm_source) payload.Lead_Source2 = data.utm_source;
-  if (data.utm_term) payload.Term = Number(data.utm_term) || null;
-  if (data.utm_content) payload.LP = data.utm_content;
-  if (data.utm_id) payload.UTM_ID = Number(data.utm_id) || null;
-  if (data.campaign_id) payload.Campaign_ID = Number(data.campaign_id) || null;
-  if (data.utm_adset) payload.Adset = data.utm_adset;
-  if (data.adset_id) payload.Adest_ID = Number(data.adset_id) || null; // Zoho has typo "Adest"
-  if (data.ad_id) payload.Ad_ID = Number(data.ad_id) || null;
-  if (data.utm_placement) payload.Placement = data.utm_placement;
+  if (data.utm_campaign) payload.Campaign_v2 = data.utm_campaign;
+  if (data.utm_medium) payload.Medium_v2 = data.utm_medium;
+  if (data.utm_source) payload.Lead_Source_v2 = data.utm_source;
+  if (data.utm_term) payload.Term_v2 = data.utm_term;
+  if (data.utm_content) payload.LP_v2 = data.utm_content;
+  if (data.utm_id) payload.UTM_ID_v2 = data.utm_id;
+  if (data.campaign_id) payload.Campaign_ID_v2 = data.campaign_id;
+  if (data.utm_adset) payload.Adset_v2 = data.utm_adset;
+  if (data.adset_id) payload.Adset_ID_v2 = data.adset_id;
+  if (data.ad_id) payload.Ad_ID_v2 = data.ad_id;
+  if (data.utm_placement) payload.Placement_v2 = data.utm_placement;
 
   // Scholarship & targets
   if (data.scholarship_requirement)
-    payload.Scholarship_Requirements = data.scholarship_requirement;
+    payload.Scholarship_Requirement_v2 = data.scholarship_requirement;
   if (data.target_geographies)
-    payload.Target_Geographies = Array.isArray(data.target_geographies)
+    payload.Target_Geographies_v2 = Array.isArray(data.target_geographies)
       ? data.target_geographies.join(", ")
       : data.target_geographies;
 
   // Counselling (Page 2)
-  // Parse selected_date: form stores "Wednesday, June 11, 2026" → Zoho needs "2026-06-11"
   let isoDate: string | null = null;
   if (data.selected_date) {
     const parsed = new Date(String(data.selected_date));
     if (!isNaN(parsed.getTime())) isoDate = parsed.toISOString().split("T")[0];
   }
-  if (isoDate) payload.Selected_Date = isoDate;
+  if (isoDate) payload.Selected_Date_v2 = isoDate;
 
-  // Parse selected_slot: form stores "10 AM" / "3 PM" → Zoho date/time needs "2026-06-11T10:00:00"
   if (data.selected_slot && isoDate) {
     const slotStr = String(data.selected_slot).trim();
     const match = slotStr.match(/^(\d{1,2})\s*(AM|PM)$/i);
@@ -269,23 +265,22 @@ function buildZohoPayload(
       if (ampm === "PM" && hour !== 12) hour += 12;
       if (ampm === "AM" && hour === 12) hour = 0;
       const hourStr = String(hour).padStart(2, "0");
-      payload.Selected_Time = `${isoDate}T${hourStr}:00:00`;
+      payload.Selected_Time_v2 = `${isoDate}T${hourStr}:00:00`;
     }
   }
 
   // Session tracking
-  if (data.session_id) payload.Session_ID = data.session_id;
+  if (data.session_id) payload.Session_ID_v2 = data.session_id;
 
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
-    payload.Submission_Status = "submitted";
+    payload.Submission_Status_v2 = "submitted";
     payload.Lead_Status = "In Progress";
-    // Clear sub-category on final submit (lead is no longer partial)
-    payload.Lead_Subcategory = null;
+    payload.Lead_Subcategory_v2 = null;
   } else {
     payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
-    if (subcategory) payload.Lead_Subcategory = subcategory;
+    if (subcategory) payload.Lead_Subcategory_v2 = subcategory;
   }
 
   return payload;
@@ -335,10 +330,10 @@ export const handler: Handler = async (event) => {
     }
 
     if (step === 1) {
-      // Duplicate check: search for existing lead with same Session_ID
+      // Duplicate check: search for existing lead with same Session_ID_v2
       if (formData.session_id) {
         try {
-          const searchUrl = `${baseUrl}/search?criteria=(Session_ID:equals:${formData.session_id})`;
+          const searchUrl = `${baseUrl}/search?criteria=(Session_ID_v2:equals:${formData.session_id})`;
           const searchRes = await fetch(searchUrl, {
             headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
           });
