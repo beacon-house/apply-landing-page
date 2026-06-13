@@ -199,11 +199,14 @@ function buildZohoPayload(
     payload.Layout = { id: layoutId };
   }
 
-  // Mandatory field: Last_Name is system mandatory; code populates with parent_name
+  // Mandatory fields: Last_Name and Company
   payload.Last_Name =
     maybePrefixTest(data.parent_name as string | undefined) ||
     (data.student_name ? `Student: ${maybePrefixTest(data.student_name as string | undefined)}` : null) ||
     "Unknown";
+
+  // Company is system-mandatory in Zoho; map from school name or default
+  payload.Company = (data.school_name as string) || "Individual";
 
   // Core contact (system fields Email, Phone, Lead_Status kept as-is for CRM functionality)
   if (data.parent_name) payload.Parent_Name_v2 = maybePrefixTest(data.parent_name as string | undefined);
