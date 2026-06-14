@@ -75,8 +75,9 @@ export default function FormContainer() {
       const { zohoLeadId: leadId } = useFormStore.getState();
       if (!leadId) return; // No Zoho record to update
 
-      const { formData: latestData } = useFormStore.getState().getLatestFormData();
-      fireAbandonmentUpdate(latestData, leadId);
+      const state = useFormStore.getState();
+      const { formData: latestData } = state.getLatestFormData();
+      fireAbandonmentUpdate({ ...latestData, sessionId: state.sessionId }, leadId);
     };
 
     const onBeforeUnload = () => handlePageExit();
@@ -216,7 +217,7 @@ export default function FormContainer() {
       // Students are handled separately below — they submit immediately with isFinalSubmit=true
       if (leadCategory !== 'drop' && data.formFillerType !== 'student') {
         try {
-          const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory }, false);
+          const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory, sessionId }, false);
           if (zohoId) setZohoLeadId(zohoId);
         } catch (zohoErr: unknown) {
           errorLog('Zoho lead creation failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
@@ -230,7 +231,7 @@ export default function FormContainer() {
         // Create Zoho lead for student submissions (non-drop only)
         if (leadCategory !== 'drop') {
           try {
-            const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory }, true);
+            const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory, sessionId }, true);
             if (zohoId) setZohoLeadId(zohoId);
           } catch (zohoErr: unknown) {
             errorLog('Zoho lead creation failed for student:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
@@ -346,7 +347,7 @@ export default function FormContainer() {
       cancelPendingZohoUpdate();
       if (zohoLeadId) {
         try {
-          await updateZohoLead(latestFormDataAfterUpdates, zohoLeadId, true);
+          await updateZohoLead({ ...latestFormDataAfterUpdates, sessionId }, zohoLeadId, true);
         } catch (zohoErr: unknown) {
           errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
         }
@@ -398,7 +399,7 @@ export default function FormContainer() {
       cancelPendingZohoUpdate();
       if (zohoLeadId) {
         try {
-          await updateZohoLead(latestFormDataAfterUpdates, zohoLeadId, true);
+          await updateZohoLead({ ...latestFormDataAfterUpdates, sessionId }, zohoLeadId, true);
         } catch (zohoErr: unknown) {
           errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
         }
