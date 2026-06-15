@@ -37,6 +37,7 @@ import { useFormStore } from '@/store/formStore';
 import { getFirstErrorField, focusField } from '@/lib/formUtils';
 import { debugLog, errorLog, warnLog } from '@/lib/logger';
 import { fireEmailCapturedEvent } from '@/lib/metaPixelEvents';
+import { scheduleDebouncedZohoUpdate } from '@/lib/zoho';
 import { fireGA4EmailCapturedEvent } from '@/lib/ga4Events';
 
 // Define the correct field order for validation error focusing
@@ -53,7 +54,7 @@ interface DisqualifiedLeadFormProps {
 }
 
 export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: DisqualifiedLeadFormProps) {
-  const { sessionId, formData: storeFormData, triggeredEvents, isSubmitted: isFormSubmitted } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId, isSubmitted: isFormSubmitted } = useFormStore();
   const [showStickyButton, setShowStickyButton] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasEmailCaptureEventFired, setHasEmailCaptureEventFired] = React.useState(false);
@@ -99,6 +100,24 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
       });
     }
   }, [parentName, email, leadCategory, sessionId]);
+
+  // Debounced incremental Zoho update on key field changes
+  React.useEffect(() => {
+    if (submissionStartedRef.current || isFormSubmitted) return;
+    if (!zohoLeadId) return;
+
+    const hasMeaningfulData = parentName || email;
+    if (!hasMeaningfulData) return;
+
+    const incrementalData = {
+      ...storeFormData,
+      parent_name: parentName || undefined,
+      parent_email: email || undefined,
+      lead_category: leadCategory,
+    };
+
+    scheduleDebouncedZohoUpdate(incrementalData, zohoLeadId, 3000);
+  }, [parentName, email, zohoLeadId, leadCategory, storeFormData, isFormSubmitted]);
 
   // Fire email captured event when user leaves email field with valid data
   const handleEmailBlur = () => {

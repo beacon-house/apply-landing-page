@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env.local
 
 /dist
 # Local Netlify folder
@@ -7,6 +8,7 @@ node_modules/
 
 # Context docs live outside this repo in ../.context/
 .context
+AGENTS.md
 
 # Local agent/editor state
 .claude/

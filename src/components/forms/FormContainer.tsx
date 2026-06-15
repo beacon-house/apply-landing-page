@@ -28,6 +28,7 @@ import {
   trackFormSubmission,
   saveFormDataIncremental 
 } from '@/lib/formTracking';
+import { createZohoLead, updateZohoLead, cancelPendingZohoUpdate, fireAbandonmentUpdate } from '@/lib/zoho';
 import { InitialLeadCaptureData, QualifiedLeadData, DisqualifiedLeadData } from '@/types/form';
 import { debugLog, errorLog } from '@/lib/logger';
 
@@ -37,15 +38,19 @@ export default function FormContainer() {
     formData, // This is a snapshot, use () for latest
     isSubmitting,
     isSubmitted,
+    isHydrated,
     startTime,
     sessionId,
     triggeredEvents, // This is a snapshot, use () for latest
+    zohoLeadId,
     setStep,
     updateFormData,
     setSubmitting,
     setSubmitted,
     addTriggeredEvents,
     getLatestFormData, // Import the new getter
+    setZohoLeadId,
+    hydrateFromSupabase,
     bookingFailureContext
   } = useFormStore();
 
@@ -58,8 +63,39 @@ export default function FormContainer() {
   const [showEvaluationAnimation, setShowEvaluationAnimation] = useState(false);
   const [evaluatedLeadCategory, setEvaluatedLeadCategory] = useState<string | null>(null);
   
-  // Track form start when component mounts
+  // Hydrate form state from Supabase on mount (survives page refresh)
   useEffect(() => {
+    hydrateFromSupabase();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fire abandonment update to Zoho when user leaves mid-form
+  useEffect(() => {
+    const handlePageExit = () => {
+      const { zohoLeadId: leadId } = useFormStore.getState();
+      if (!leadId) return; // No Zoho record to update
+
+      const state = useFormStore.getState();
+      const { formData: latestData } = state.getLatestFormData();
+      fireAbandonmentUpdate({ ...latestData, sessionId: state.sessionId }, leadId);
+    };
+
+    const onBeforeUnload = () => handlePageExit();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') handlePageExit();
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
+
+  // Track form start when component mounts (skip if recovering a session)
+  useEffect(() => {
+    if (!isHydrated) return; // Wait for hydration to complete
     const trackFormStart = async () => {
       try {
         // Use getLatestFormData to ensure we have the most current state for initial save
@@ -176,10 +212,31 @@ export default function FormContainer() {
         triggeredEvents: finalTriggeredEventsForPage1Save // Pass the latest events
       });
       trackFormStepComplete(1); // This tracks GA, not Meta Pixel
+
+      // Create Zoho lead for non-drop parent fillers (proceeding to Page 2)
+      // Students are handled separately below — they submit immediately with isFinalSubmit=true
+      if (leadCategory !== 'drop' && data.formFillerType !== 'student') {
+        try {
+          const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory, sessionId }, false);
+          if (zohoId) setZohoLeadId(zohoId);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead creation failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // If form is filled by student, submit immediately regardless of other conditions
       if (data.formFillerType === 'student') {
         setSubmitting(true);
+        
+        // Create Zoho lead for student submissions (non-drop only)
+        if (leadCategory !== 'drop') {
+          try {
+            const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, lead_category: leadCategory, sessionId }, true);
+            if (zohoId) setZohoLeadId(zohoId);
+          } catch (zohoErr: unknown) {
+            errorLog('Zoho lead creation failed for student:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+          }
+        }
         
         // Fire Meta Pixel events for student direct submission
         const studentCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
@@ -285,6 +342,16 @@ export default function FormContainer() {
 
       await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
+
+      // Cancel any pending debounced Zoho updates and send final update
+      cancelPendingZohoUpdate();
+      if (zohoLeadId) {
+        try {
+          await updateZohoLead({ ...latestFormDataAfterUpdates, sessionId }, zohoLeadId, true);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // Track final submission to database
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
@@ -327,6 +394,16 @@ export default function FormContainer() {
 
       await validateForm(2, latestFormDataAfterUpdates); // Validate with latest data
       setSubmitting(true);
+
+      // Cancel any pending debounced Zoho updates and send final update
+      cancelPendingZohoUpdate();
+      if (zohoLeadId) {
+        try {
+          await updateZohoLead({ ...latestFormDataAfterUpdates, sessionId }, zohoLeadId, true);
+        } catch (zohoErr: unknown) {
+          errorLog('Zoho lead update failed:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
+        }
+      }
       
       // Track final submission to database
       await trackFormSubmission(sessionId, latestFormDataAfterUpdates, true);
