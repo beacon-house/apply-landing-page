@@ -66,7 +66,7 @@ interface AvailabilitySlot {
 }
 
 export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: QualifiedLeadFormProps) {
-  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId, setBookingFailureContext } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId, setBookingFailureContext, isSubmitted: isFormSubmitted } = useFormStore();
 
   // All qualified leads (bch, lum-l1, lum-l2) route to Viswanathan
   const isBCH = ['bch', 'lum-l1', 'lum-l2'].includes(leadCategory);
@@ -87,6 +87,9 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [slotErrorMessage, setSlotErrorMessage] = useState<string | null>(null);
   const [usedFallbackSlots, setUsedFallbackSlots] = useState(false);
+
+  // Prevent incremental tracking after form submission to avoid stale "didnotsubmit" overwrites
+  const submissionStartedRef = React.useRef(false);
 
   const {
     register,
@@ -319,9 +322,11 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
   };
 
   // Track form sections as user completes them
+  // Guard: skip incremental saves once submission has started to prevent
+  // stale "didnotsubmit" overwrites after the final webhook is sent
   const trackSectionCompletion = async (sectionName: string, sectionData: any) => {
+    if (submissionStartedRef.current || isFormSubmitted) return;
     try {
-      // Create a comprehensive snapshot of the form data including all current triggeredEvents
       const snapshotFormData = { ...storeFormData, ...sectionData, triggeredEvents };
       await trackFormSection(sessionId, sectionName, 2, snapshotFormData);
     } catch (error) {
@@ -355,6 +360,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
 
   // Debounced incremental Zoho update on key field changes
   React.useEffect(() => {
+    if (submissionStartedRef.current || isFormSubmitted) return;
     if (!zohoLeadId) return;
 
     // Only trigger when user has actually filled something meaningful
@@ -371,7 +377,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
     };
 
     scheduleDebouncedZohoUpdate(incrementalData, zohoLeadId, 3000);
-  }, [formSelectedDate, selectedSlot, parentName, email, zohoLeadId, leadCategory, storeFormData]);
+  }, [formSelectedDate, selectedSlot, parentName, email, zohoLeadId, leadCategory, storeFormData, isFormSubmitted]);
 
   // Fire email captured event when user leaves email field with valid data
   const handleEmailBlur = () => {
@@ -428,6 +434,7 @@ export function QualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValue
     }
     
     debugLog('🚀 Page 2A form submission initiated');
+    submissionStartedRef.current = true; // Block further incremental tracking
     setIsSubmitting(true);
     
     try {

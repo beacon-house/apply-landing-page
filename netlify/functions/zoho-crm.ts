@@ -46,34 +46,47 @@ async function refreshZohoToken(): Promise<{
 
   const accountsUrl = process.env.ZOHO_ACCOUNTS_URL?.trim() || "https://accounts.zoho.com";
 
-  const tokenRes = await fetch(
-    `${accountsUrl}/oauth/v2/token`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
+  // Retry with exponential backoff on rate limit (429) or transient errors
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const tokenRes = await fetch(
+      `${accountsUrl}/oauth/v2/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      }
+    );
+
+    if (!tokenRes.ok) {
+      const text = await tokenRes.text();
+      // Retry on 429 (rate limit) or 5xx (server error)
+      if ((tokenRes.status === 429 || tokenRes.status >= 500) && attempt < maxRetries - 1) {
+        const delayMs = Math.pow(2, attempt) * 1000;
+        console.warn(`Zoho token refresh rate-limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${delayMs}ms`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      throw new Error(`Zoho token refresh failed: ${tokenRes.status} ${text}`);
     }
-  );
 
-  if (!tokenRes.ok) {
-    const text = await tokenRes.text();
-    throw new Error(`Zoho token refresh failed: ${tokenRes.status} ${text}`);
+    const tokenData: ZohoTokenResponse = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      throw new Error("Zoho token response missing access_token");
+    }
+
+    const defaultApiDomain = accountsUrl.includes(".in")
+      ? "https://www.zohoapis.in"
+      : "https://www.zohoapis.com";
+
+    return {
+      accessToken: tokenData.access_token,
+      apiDomain: tokenData.api_domain || defaultApiDomain,
+    };
   }
 
-  const tokenData: ZohoTokenResponse = await tokenRes.json();
-
-  if (!tokenData.access_token) {
-    throw new Error("Zoho token response missing access_token");
-  }
-
-  const defaultApiDomain = accountsUrl.includes(".in")
-    ? "https://www.zohoapis.in"
-    : "https://www.zohoapis.com";
-
-  return {
-    accessToken: tokenData.access_token,
-    apiDomain: tokenData.api_domain || defaultApiDomain,
-  };
+  throw new Error("Zoho token refresh failed after max retries");
 }
 
 /**
@@ -199,66 +212,77 @@ function buildZohoPayload(
     payload.Layout = { id: layoutId };
   }
 
-  // Mandatory fields: Last_Name and Company
+  // Mandatory field: prefix student name for clarity, replace with parent name when available
   payload.Last_Name =
-    maybePrefixTest(data.parent_name as string | undefined) ||
-    (data.student_name ? `Student: ${maybePrefixTest(data.student_name as string | undefined)}` : null) ||
+    maybePrefixTest(data.parent_name) ||
+    (data.student_name ? `Student: ${maybePrefixTest(data.student_name)}` : null) ||
     "Unknown";
 
-  // Company is system-mandatory in Zoho; map from school name or default
-  payload.Company = (data.school_name as string) || "Individual";
-
-  // Core contact (system fields Email, Phone, Lead_Status kept as-is for CRM functionality)
-  if (data.parent_name) payload.Parent_Name_v2 = maybePrefixTest(data.parent_name as string | undefined);
-  if (data.student_name) payload.Student_Name_v2 = maybePrefixTest(data.student_name as string | undefined);
-  const parentEmail = data.parent_email as string | undefined;
-  if (parentEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) {
-    payload.Email = parentEmail;
+  // Core contact
+  if (data.student_name) payload.Student_s_Name = maybePrefixTest(data.student_name); // repurposed field
+  // Email: validate format before sending — Zoho rejects invalid emails
+  if (data.parent_email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.parent_email))) {
+    payload.Email = data.parent_email;
   }
-  if (data.phone_number) payload.Phone = data.phone_number as string;
+  if (data.phone_number) payload.Phone = data.phone_number;
 
   // Academic
-  if (data.current_grade) payload.Current_Grade_v2 = data.current_grade;
-  if (data.school_name) payload.School_Name_v2 = data.school_name;
-  if (data.curriculum_type) payload.Curriculum_Type_v2 = data.curriculum_type;
-  if (data.grade_format) payload.Grade_Format_v2 = data.grade_format;
-  if (data.percentage_value != null) payload.Percentage_Value_v2 = data.percentage_value;
-  if (data.gpa_value != null) payload.GPA_Value_v2 = data.gpa_value;
+  // Grade: Zoho field is a number, so "7_below" can't be stored as-is.
+  // Map "7_below" → 7 (the numeric equivalent); the Lead_Category="drop"
+  // and context already identify it as grade 7 or below.
+  if (data.current_grade) {
+    const gradeStr = String(data.current_grade);
+    if (gradeStr === "7_below") {
+      payload.Current_Grade_v1 = 7;
+    } else {
+      payload.Current_Grade_v1 = Number(gradeStr) || null;
+    }
+  }
+  if (data.school_name) payload.School_Name = data.school_name;
+  if (data.curriculum_type) payload.Curriculum_Type1 = data.curriculum_type;
+  if (data.grade_format) payload.Grade_Format = data.grade_format;
+  // GPA/Percentage: Zoho fields typed as Decimal
+  if (data.percentage_value != null)
+    payload.Percentage_Value1 = Number(data.percentage_value) || null;
+  if (data.gpa_value != null)
+    payload.GPA_Value1 = Number(data.gpa_value) || null;
 
   // Location / tracking
-  if (data.location) payload.Location_v2 = data.location;
-  if (data.form_filler_type) payload.Form_Filler_Type_v2 = data.form_filler_type;
-  if (data.lead_category) payload.Lead_Category_v2 = data.lead_category;
+  if (data.location) payload.Location_v1 = data.location;
+  if (data.form_filler_type) payload.Form_Filler_Type = data.form_filler_type;
+  if (data.lead_category) payload.Lead_Category = data.lead_category;
 
   // UTM & ad tracking
-  if (data.utm_campaign) payload.Campaign_v2 = data.utm_campaign;
-  if (data.utm_medium) payload.Medium_v2 = data.utm_medium;
-  if (data.utm_source) payload.Lead_Source_v2 = data.utm_source;
-  if (data.utm_term) payload.Term_v2 = data.utm_term;
-  if (data.utm_content) payload.LP_v2 = data.utm_content;
-  if (data.utm_id) payload.UTM_ID_v2 = data.utm_id;
-  if (data.campaign_id) payload.Campaign_ID_v2 = data.campaign_id;
-  if (data.utm_adset) payload.Adset_v2 = data.utm_adset;
-  if (data.adset_id) payload.Adset_ID_v2 = data.adset_id;
-  if (data.ad_id) payload.Ad_ID_v2 = data.ad_id;
-  if (data.utm_placement) payload.Placement_v2 = data.utm_placement;
+  if (data.utm_campaign) payload.Campaign = data.utm_campaign;
+  if (data.utm_medium) payload.Medium = data.utm_medium;
+  if (data.utm_source) payload.Lead_Source2 = data.utm_source;
+  if (data.utm_term) payload.Term = Number(data.utm_term) || null;
+  if (data.utm_content) payload.LP = data.utm_content;
+  if (data.utm_id) payload.UTM_ID = Number(data.utm_id) || null;
+  if (data.campaign_id) payload.Campaign_ID = Number(data.campaign_id) || null;
+  if (data.utm_adset) payload.Adset = data.utm_adset;
+  if (data.adset_id) payload.Adest_ID = Number(data.adset_id) || null; // Zoho has typo "Adest"
+  if (data.ad_id) payload.Ad_ID = Number(data.ad_id) || null;
+  if (data.utm_placement) payload.Placement = data.utm_placement;
 
   // Scholarship & targets
   if (data.scholarship_requirement)
-    payload.Scholarship_Requirement_v2 = data.scholarship_requirement;
+    payload.Scholarship_Requirements = data.scholarship_requirement;
   if (data.target_geographies)
-    payload.Target_Geographies_v2 = Array.isArray(data.target_geographies)
+    payload.Target_Geographies = Array.isArray(data.target_geographies)
       ? data.target_geographies.join(", ")
       : data.target_geographies;
 
   // Counselling (Page 2)
+  // Parse selected_date: form stores "Wednesday, June 11, 2026" → Zoho needs "2026-06-11"
   let isoDate: string | null = null;
   if (data.selected_date) {
     const parsed = new Date(String(data.selected_date));
     if (!isNaN(parsed.getTime())) isoDate = parsed.toISOString().split("T")[0];
   }
-  if (isoDate) payload.Selected_Date_v2 = isoDate;
+  if (isoDate) payload.Selected_Date = isoDate;
 
+  // Parse selected_slot: form stores "10 AM" / "3 PM" → Zoho date/time needs "2026-06-11T10:00:00"
   if (data.selected_slot && isoDate) {
     const slotStr = String(data.selected_slot).trim();
     const match = slotStr.match(/^(\d{1,2})\s*(AM|PM)$/i);
@@ -268,22 +292,23 @@ function buildZohoPayload(
       if (ampm === "PM" && hour !== 12) hour += 12;
       if (ampm === "AM" && hour === 12) hour = 0;
       const hourStr = String(hour).padStart(2, "0");
-      payload.Selected_Time_v2 = `${isoDate}T${hourStr}:00:00`;
+      payload.Selected_Time = `${isoDate}T${hourStr}:00:00`;
     }
   }
 
   // Session tracking
-  if (data.session_id) payload.Session_ID_v2 = data.session_id;
+  if (data.session_id) payload.Session_ID = data.session_id;
 
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
-    payload.Submission_Status_v2 = "submitted";
+    payload.Submission_Status = "submitted";
     payload.Lead_Status = "In Progress";
-    payload.Lead_Subcategory_v2 = null;
+    // Clear sub-category on final submit (lead is no longer partial)
+    payload.Lead_Subcategory = null;
   } else {
     payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
-    if (subcategory) payload.Lead_Subcategory_v2 = subcategory;
+    if (subcategory) payload.Lead_Subcategory = subcategory;
   }
 
   return payload;
@@ -333,16 +358,25 @@ export const handler: Handler = async (event) => {
     }
 
     if (step === 1) {
-      // Duplicate check: search for existing lead with same Session_ID_v2
+      // Duplicate check: search for existing lead with same Session_ID
       if (formData.session_id) {
         try {
-          const searchUrl = `${baseUrl}/search?criteria=(Session_ID_v2:equals:${formData.session_id})`;
+          const searchUrl = `${baseUrl}/search?criteria=(Session_ID:equals:${formData.session_id})`;
           const searchRes = await fetch(searchUrl, {
             headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
           });
-          const searchData = await searchRes.json();
 
-          if (searchData.data?.length > 0) {
+          // Guard: Zoho sometimes returns an empty body (e.g. 204 No Content)
+          // which causes JSON.parse to throw "Unexpected end of JSON input"
+          const searchText = await searchRes.text();
+          let searchData: { data?: { id: string }[] } | null = null;
+          try {
+            searchData = searchText ? JSON.parse(searchText) : null;
+          } catch {
+            console.error("Zoho duplicate search returned invalid JSON, proceeding with create");
+          }
+
+          if (searchData?.data?.length > 0) {
             const existingId = searchData.data[0].id;
             console.log(`Zoho duplicate found for session ${formData.session_id}: ${existingId}, returning existing ID`);
             return {
@@ -363,6 +397,11 @@ export const handler: Handler = async (event) => {
 
       // CREATE lead
       const payload = buildZohoPayload(formData, final);
+      // Assign lead owner on CREATE only (Zoho often restricts Owner changes on UPDATE)
+      const ownerId = process.env.ZOHO_OWNER_ID;
+      if (ownerId) {
+        payload.Owner = { id: ownerId };
+      }
 
       const res = await fetch(baseUrl, {
         method: "POST",

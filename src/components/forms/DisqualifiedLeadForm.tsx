@@ -54,10 +54,13 @@ interface DisqualifiedLeadFormProps {
 }
 
 export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultValues }: DisqualifiedLeadFormProps) {
-  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId } = useFormStore();
+  const { sessionId, formData: storeFormData, triggeredEvents, zohoLeadId, isSubmitted: isFormSubmitted } = useFormStore();
   const [showStickyButton, setShowStickyButton] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasEmailCaptureEventFired, setHasEmailCaptureEventFired] = React.useState(false);
+
+  // Prevent incremental tracking after form submission to avoid stale "didnotsubmit" overwrites
+  const submissionStartedRef = React.useRef(false);
 
   const {
     register,
@@ -74,9 +77,11 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
   const email = watch('email');
   
   // Track form sections as user completes them
+  // Guard: skip incremental saves once submission has started to prevent
+  // stale "didnotsubmit" overwrites after the final webhook is sent
   const trackSectionCompletion = async (sectionName: string, sectionData: any) => {
+    if (submissionStartedRef.current || isFormSubmitted) return;
     try {
-      // Create a comprehensive snapshot of the form data including all current triggeredEvents
       const snapshotFormData = { ...storeFormData, ...sectionData, triggeredEvents };
       await trackFormSection(sessionId, sectionName, 2, snapshotFormData);
     } catch (error) {
@@ -98,6 +103,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
 
   // Debounced incremental Zoho update on key field changes
   React.useEffect(() => {
+    if (submissionStartedRef.current || isFormSubmitted) return;
     if (!zohoLeadId) return;
 
     const hasMeaningfulData = parentName || email;
@@ -111,7 +117,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
     };
 
     scheduleDebouncedZohoUpdate(incrementalData, zohoLeadId, 3000);
-  }, [parentName, email, zohoLeadId, leadCategory, storeFormData]);
+  }, [parentName, email, zohoLeadId, leadCategory, storeFormData, isFormSubmitted]);
 
   // Fire email captured event when user leaves email field with valid data
   const handleEmailBlur = () => {
@@ -155,6 +161,7 @@ export function DisqualifiedLeadForm({ onSubmit, onBack, leadCategory, defaultVa
     }
     
     debugLog('🚀 Page 2B form submission initiated');
+    submissionStartedRef.current = true; // Block further incremental tracking
     setIsSubmitting(true);
     
     try {

@@ -101,6 +101,11 @@ export const saveFormDataIncremental = async (
       utm_term: utmParameters.utm_term || null,
       utm_content: utmParameters.utm_content || null,
       utm_id: utmParameters.utm_id || null,
+      campaign_id: utmParameters.campaign_id || null,
+      utm_adset: utmParameters.utm_adset || null,
+      adset_id: utmParameters.adset_id || null,
+      ad_id: utmParameters.ad_id || null,
+      utm_placement: utmParameters.utm_placement || null,
 
       // Booking status fields (for proactive follow-up)
       booking_status: (() => {
@@ -137,9 +142,14 @@ export const saveFormDataIncremental = async (
     try {
       debugLog('🔄 Attempting fallback direct upsert for session:', sessionId);
       
+      // Strip campaign columns that may not exist yet (if migration hasn't run).
+      // The RPC path ignores unknown jsonb keys, but direct upsert will fail
+      // on missing columns. Remove them so the fallback works pre-migration.
+      const { campaign_id, utm_adset, adset_id, ad_id, utm_placement, ...safeFormData } = dbFormData;
+      
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('form_sessions')
-        .upsert([dbFormData], { 
+        .upsert([safeFormData], { 
           onConflict: 'session_id',
           ignoreDuplicates: false 
         })

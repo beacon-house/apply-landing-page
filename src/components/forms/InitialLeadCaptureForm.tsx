@@ -78,6 +78,9 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasPhoneCaptureEventFired, setHasPhoneCaptureEventFired] = React.useState(false);
   const { sessionId, formData: storeFormData, triggeredEvents } = useFormStore();
+
+  // Prevent incremental tracking after form submission to avoid stale overwrites
+  const submissionStartedRef = React.useRef(false);
   
   const {
     register,
@@ -161,6 +164,7 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
     }
     
     debugLog('🚀 Form submission initiated');
+    submissionStartedRef.current = true; // Block further incremental tracking
     setIsSubmitting(true);
     
     try {
@@ -271,9 +275,11 @@ export const InitialLeadCaptureForm = forwardRef<InitialLeadCaptureFormRef, Init
   };
 
   // Track form sections as user completes them
+  // Guard: skip incremental saves once submission has started to prevent
+  // stale overwrites after the final webhook is sent
   const trackSectionCompletion = async (sectionName: string, sectionData: any) => {
+    if (submissionStartedRef.current) return;
     try {
-      // Create a comprehensive snapshot of the form data including all current triggeredEvents
       const snapshotFormData = { ...storeFormData, ...sectionData, triggeredEvents };
       await trackFormSection(sessionId, sectionName, 1, snapshotFormData);
     } catch (error) {
