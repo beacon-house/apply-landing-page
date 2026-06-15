@@ -17,14 +17,21 @@ declare global {
 
 function App() {
   const { setUtmParameters } = useFormStore();
+
+  // Set UTM params synchronously before first render so child components
+  // (FormContainer, etc.) see them in their mount effects.  React runs
+  // child effects before parent effects, so a useEffect here would be
+  // too late — the first incremental save would read an empty store.
+  const utmInitialized = React.useRef(false);
+  if (!utmInitialized.current) {
+    utmInitialized.current = true;
+    const utm = getUtmParametersFromUrl();
+    if (Object.keys(utm).length > 0) {
+      setUtmParameters(utm);
+    }
+  }
   
   React.useEffect(() => {
-    // Initialize session early
-    const formState = useFormStore.getState();
-    if (!formState.sessionId) {
-      // Session is already initialized in store, but ensure it exists
-    }
-    
     // Initialize Google Analytics
     initializeAnalytics();
     
@@ -33,11 +40,7 @@ function App() {
     
     // Fetch client IP asynchronously (non-blocking)
     fetchClientIpAddress().catch(() => {});
-    
-    // Extract and set UTM parameters
-    const utm = getUtmParametersFromUrl();
-    setUtmParameters(utm);
-  }, [setUtmParameters]);
+  }, []);
 
   return (
     <Routes>
