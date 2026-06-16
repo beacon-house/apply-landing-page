@@ -46,34 +46,46 @@ async function refreshZohoToken(): Promise<{
 
   const accountsUrl = process.env.ZOHO_ACCOUNTS_URL?.trim() || "https://accounts.zoho.com";
 
-  const tokenRes = await fetch(
-    `${accountsUrl}/oauth/v2/token`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
+  // Retry with exponential backoff on rate limit (429) or transient errors
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const tokenRes = await fetch(
+      `${accountsUrl}/oauth/v2/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      }
+    );
+
+    if (!tokenRes.ok) {
+      const text = await tokenRes.text();
+      if ((tokenRes.status === 429 || tokenRes.status >= 500) && attempt < maxRetries - 1) {
+        const delayMs = Math.pow(2, attempt) * 1000;
+        console.warn(`Zoho token refresh rate-limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${delayMs}ms`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      throw new Error(`Zoho token refresh failed: ${tokenRes.status} ${text}`);
     }
-  );
 
-  if (!tokenRes.ok) {
-    const text = await tokenRes.text();
-    throw new Error(`Zoho token refresh failed: ${tokenRes.status} ${text}`);
+    const tokenData: ZohoTokenResponse = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      throw new Error("Zoho token response missing access_token");
+    }
+
+    const defaultApiDomain = accountsUrl.includes(".in")
+      ? "https://www.zohoapis.in"
+      : "https://www.zohoapis.com";
+
+    return {
+      accessToken: tokenData.access_token,
+      apiDomain: tokenData.api_domain || defaultApiDomain,
+    };
   }
 
-  const tokenData: ZohoTokenResponse = await tokenRes.json();
-
-  if (!tokenData.access_token) {
-    throw new Error("Zoho token response missing access_token");
-  }
-
-  const defaultApiDomain = accountsUrl.includes(".in")
-    ? "https://www.zohoapis.in"
-    : "https://www.zohoapis.com";
-
-  return {
-    accessToken: tokenData.access_token,
-    apiDomain: tokenData.api_domain || defaultApiDomain,
-  };
+  throw new Error("Zoho token refresh failed after max retries");
 }
 
 /**
@@ -340,9 +352,18 @@ export const handler: Handler = async (event) => {
           const searchRes = await fetch(searchUrl, {
             headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
           });
-          const searchData = await searchRes.json();
 
-          if (searchData.data?.length > 0) {
+          // Guard: Zoho sometimes returns an empty body (e.g. 204 No Content)
+          // which causes JSON.parse to throw
+          const searchText = await searchRes.text();
+          let searchData: { data?: { id: string }[] } | null = null;
+          try {
+            searchData = searchText ? JSON.parse(searchText) : null;
+          } catch {
+            console.error("Zoho duplicate search returned invalid JSON, proceeding with create");
+          }
+
+          if (searchData?.data?.length > 0) {
             const existingId = searchData.data[0].id;
             console.log(`Zoho duplicate found for session ${formData.session_id}: ${existingId}, returning existing ID`);
             return {
@@ -363,6 +384,12 @@ export const handler: Handler = async (event) => {
 
       // CREATE lead
       const payload = buildZohoPayload(formData, final);
+
+      // Assign lead owner on CREATE only (Zoho restricts Owner changes on UPDATE)
+      const ownerId = process.env.ZOHO_OWNER_ID;
+      if (ownerId) {
+        payload.Owner = { id: ownerId };
+      }
 
       const res = await fetch(baseUrl, {
         method: "POST",
