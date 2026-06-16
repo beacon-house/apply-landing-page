@@ -73,10 +73,10 @@ export default function FormContainer() {
   // Fire abandonment update to Zoho when user leaves mid-form
   useEffect(() => {
     const handlePageExit = () => {
-      const { zohoLeadId: leadId } = useFormStore.getState();
-      if (!leadId) return; // No Zoho record to update
-
       const state = useFormStore.getState();
+      if (state.isSubmitted) return; // Already submitted, don't overwrite with abandonment
+      const { zohoLeadId: leadId } = state;
+      if (!leadId) return; // No Zoho record to update
       const { formData: latestData, utmParameters: latestUtm } = state.getLatestFormData();
       fireAbandonmentUpdate({ ...latestData, utmParameters: latestUtm, sessionId: state.sessionId }, leadId);
     };
