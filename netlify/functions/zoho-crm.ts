@@ -344,6 +344,20 @@ export const handler: Handler = async (event) => {
       };
     }
 
+    // Skip student leads entirely (DT-002)
+    // Student leads stay in Supabase/Google Sheets only — no clear business routine for CRM yet
+    if (step === 1 && formData.form_filler_type === "student") {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          skipped: true,
+          reason: "Student leads are not synced to Zoho CRM",
+        }),
+      };
+    }
+
     if (step === 1) {
       // Duplicate check: search for existing lead with same Session_ID_v2
       if (formData.session_id) {

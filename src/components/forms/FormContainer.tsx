@@ -226,18 +226,9 @@ export default function FormContainer() {
       }
       
       // If form is filled by student, submit immediately regardless of other conditions
+      // Student leads are NOT pushed to Zoho CRM — they stay in Supabase/Google Sheets only (DT-002)
       if (data.formFillerType === 'student') {
         setSubmitting(true);
-        
-        // Create Zoho lead for student submissions (non-drop only)
-        if (leadCategory !== 'drop') {
-          try {
-            const zohoId = await createZohoLead({ ...latestFormDataAfterUpdates, utmParameters, lead_category: leadCategory, sessionId }, true);
-            if (zohoId) setZohoLeadId(zohoId);
-          } catch (zohoErr: unknown) {
-            errorLog('Zoho lead creation failed for student:', zohoErr instanceof Error ? zohoErr.message : String(zohoErr));
-          }
-        }
         
         // Fire Meta Pixel events for student direct submission
         const studentCompleteEvents = fireFormProgressionEvents('form_complete', latestFormDataAfterUpdates);
