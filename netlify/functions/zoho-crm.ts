@@ -29,17 +29,11 @@ async function refreshZohoToken(): Promise<{
 }> {
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-  
-  // Use sandbox refresh token when in staging environment
-  const env = process.env.VITE_ENVIRONMENT?.trim();
-  const isSandbox = env === "stg" || env === "dev";
-  const refreshToken = isSandbox
-    ? process.env.ZOHO_SANDBOX_REFRESH_TOKEN || process.env.ZOHO_REFRESH_TOKEN
-    : process.env.ZOHO_REFRESH_TOKEN;
+  const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error(
-      "Missing Zoho credentials: ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, or ZOHO_REFRESH_TOKEN (or ZOHO_SANDBOX_REFRESH_TOKEN for sandbox)"
+      "Missing Zoho credentials: ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, or ZOHO_REFRESH_TOKEN"
     );
   }
 
@@ -86,6 +80,8 @@ async function refreshZohoToken(): Promise<{
       : "https://www.zohoapis.com";
 
     // Override API domain for sandbox; token response always returns production domain
+    const env = process.env.VITE_ENVIRONMENT?.trim();
+    const isSandbox = env === "stg" || env === "dev";
     const apiDomain = isSandbox
       ? "https://sandbox.zohoapis.in"
       : (tokenData.api_domain || defaultApiDomain);
@@ -417,7 +413,8 @@ export const handler: Handler = async (event) => {
       }
 
       // Set Created At v2 on CREATE only (not updated on step 2)
-      payload.Created_At_v2 = new Date().toISOString();
+      // Zoho datetime fields expect yyyy-MM-dd HH:mm:ss, not ISO string
+      payload.Created_At_v2 = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
       const res = await fetch(baseUrl, {
         method: "POST",
