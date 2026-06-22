@@ -79,9 +79,16 @@ async function refreshZohoToken(): Promise<{
       ? "https://www.zohoapis.in"
       : "https://www.zohoapis.com";
 
+    // Override API domain for sandbox; token response always returns production domain
+    const env = process.env.VITE_ENVIRONMENT?.trim();
+    const isSandbox = env === "stg" || env === "dev";
+    const apiDomain = isSandbox
+      ? "https://sandbox.zohoapis.in"
+      : (tokenData.api_domain || defaultApiDomain);
+
     return {
       accessToken: tokenData.access_token,
-      apiDomain: tokenData.api_domain || defaultApiDomain,
+      apiDomain,
     };
   }
 
@@ -406,7 +413,12 @@ export const handler: Handler = async (event) => {
       }
 
       // Set Created At v2 on CREATE only (not updated on step 2)
-      payload.Created_At_v2 = new Date().toISOString();
+      // Zoho datetime fields need T separator and reject milliseconds.
+      // toISOString() returns UTC; use local time components so Zoho stores
+      // the correct local time (it interprets API input as account timezone).
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      payload.Created_At_v2 = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
       const res = await fetch(baseUrl, {
         method: "POST",
