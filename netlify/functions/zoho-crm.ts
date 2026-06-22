@@ -413,8 +413,12 @@ export const handler: Handler = async (event) => {
       }
 
       // Set Created At v2 on CREATE only (not updated on step 2)
-      // Zoho datetime fields need T separator; milliseconds (.000) break parsing
-      payload.Created_At_v2 = new Date().toISOString().slice(0, 19);
+      // Zoho datetime fields need T separator and reject milliseconds.
+      // toISOString() returns UTC; use local time components so Zoho stores
+      // the correct local time (it interprets API input as account timezone).
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      payload.Created_At_v2 = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
       const res = await fetch(baseUrl, {
         method: "POST",
