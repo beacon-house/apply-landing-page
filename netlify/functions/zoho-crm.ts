@@ -405,6 +405,9 @@ export const handler: Handler = async (event) => {
         payload.Owner = { id: ownerId };
       }
 
+      // Set Created At v2 on CREATE only (not updated on step 2)
+      payload.Created_At_v2 = new Date().toISOString();
+
       const res = await fetch(baseUrl, {
         method: "POST",
         headers: {
