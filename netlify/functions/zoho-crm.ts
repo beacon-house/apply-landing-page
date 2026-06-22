@@ -413,8 +413,8 @@ export const handler: Handler = async (event) => {
       }
 
       // Set Created At v2 on CREATE only (not updated on step 2)
-      // Zoho datetime fields expect yyyy-MM-dd HH:mm:ss, not ISO string
-      payload.Created_At_v2 = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      // Zoho datetime fields need T separator; milliseconds (.000) break parsing
+      payload.Created_At_v2 = new Date().toISOString().slice(0, 19);
 
       const res = await fetch(baseUrl, {
         method: "POST",
