@@ -29,11 +29,17 @@ async function refreshZohoToken(): Promise<{
 }> {
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-  const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+  
+  // Use sandbox refresh token when in staging environment
+  const env = process.env.VITE_ENVIRONMENT?.trim();
+  const isSandbox = env === "stg" || env === "dev";
+  const refreshToken = isSandbox
+    ? process.env.ZOHO_SANDBOX_REFRESH_TOKEN || process.env.ZOHO_REFRESH_TOKEN
+    : process.env.ZOHO_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error(
-      "Missing Zoho credentials: ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, or ZOHO_REFRESH_TOKEN"
+      "Missing Zoho credentials: ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, or ZOHO_REFRESH_TOKEN (or ZOHO_SANDBOX_REFRESH_TOKEN for sandbox)"
     );
   }
 
@@ -79,9 +85,14 @@ async function refreshZohoToken(): Promise<{
       ? "https://www.zohoapis.in"
       : "https://www.zohoapis.com";
 
+    // Override API domain for sandbox; token response always returns production domain
+    const apiDomain = isSandbox
+      ? "https://sandbox.zohoapis.in"
+      : (tokenData.api_domain || defaultApiDomain);
+
     return {
       accessToken: tokenData.access_token,
-      apiDomain: tokenData.api_domain || defaultApiDomain,
+      apiDomain,
     };
   }
 
