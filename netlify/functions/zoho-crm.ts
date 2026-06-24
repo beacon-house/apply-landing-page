@@ -218,6 +218,10 @@ function buildZohoPayload(
     payload.Layout = { id: layoutId };
   }
 
+  // Source landing page identifier (set via Netlify env var ZOHO_LP_SOURCE)
+  const lpSource = process.env.ZOHO_LP_SOURCE?.trim();
+  if (lpSource) payload.Source_LP_v2 = lpSource;
+
   // Mandatory fields: Last_Name and Company
   payload.Last_Name =
     maybePrefixTest(data.parent_name as string | undefined) ||
@@ -412,13 +416,18 @@ export const handler: Handler = async (event) => {
         payload.Owner = { id: ownerId };
       }
 
-      // Set Created At v2 on CREATE only (not updated on step 2)
       // Zoho datetime fields need T separator and reject milliseconds.
-      // toISOString() returns UTC; use local time components so Zoho stores
-      // the correct local time (it interprets API input as account timezone).
+      // Netlify Functions run in UTC; explicitly convert to IST (Asia/Kolkata)
+      // so Zoho stores the correct local time (it interprets input as account timezone).
       const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      payload.Created_At_v2 = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      const istParts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+      }).formatToParts(now);
+      const get = (type: string) => istParts.find(p => p.type === type)?.value || '00';
+      payload.Created_At_v2 = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
 
       const res = await fetch(baseUrl, {
         method: "POST",
