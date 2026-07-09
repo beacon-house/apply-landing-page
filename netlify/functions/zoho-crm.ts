@@ -429,7 +429,7 @@ export const handler: Handler = async (event) => {
         hour12: false,
       }).formatToParts(now);
       const get = (type: string) => istParts.find(p => p.type === type)?.value || '00';
-      payload.Created_At_v2 = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
+      payload.Created_At_v2 = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}+05:30`;
 
       const res = await fetch(baseUrl, {
         method: "POST",
