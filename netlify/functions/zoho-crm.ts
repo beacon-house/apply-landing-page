@@ -301,13 +301,15 @@ function buildZohoPayload(
   // Submission status & sub-category (abandonment tracking)
   if (isFinalSubmit) {
     payload.Submission_Status_v2 = "submitted";
-    payload.Lead_Status = "In Progress";
     payload.Lead_Subcategory_v2 = null;
   } else {
-    payload.Lead_Status = "New";
     const subcategory = computeLeadSubcategory(data, false);
     if (subcategory) payload.Lead_Subcategory_v2 = subcategory;
   }
+
+  // Lead_Status: "New" for all leads, "Nurture Lead" for nurture category.
+  // "In Progress" is set manually by the ops team, not by us.
+  payload.Lead_Status = data.lead_category === "nurture" ? "Nurture Lead" : "New";
 
   return payload;
 }
@@ -427,7 +429,7 @@ export const handler: Handler = async (event) => {
         hour12: false,
       }).formatToParts(now);
       const get = (type: string) => istParts.find(p => p.type === type)?.value || '00';
-      payload.Created_At_v2 = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
+      payload.Created_At_v2 = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}+05:30`;
 
       const res = await fetch(baseUrl, {
         method: "POST",
