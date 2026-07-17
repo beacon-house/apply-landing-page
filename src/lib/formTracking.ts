@@ -101,6 +101,12 @@ export const saveFormDataIncremental = async (
       utm_term: utmParameters.utm_term || null,
       utm_content: utmParameters.utm_content || null,
       utm_id: utmParameters.utm_id || null,
+      campaign_id: utmParameters.campaign_id || null,
+      utm_adset: utmParameters.utm_adset || null,
+      adset_id: utmParameters.adset_id || null,
+      ad_id: utmParameters.ad_id || null,
+      utm_placement: utmParameters.utm_placement || null,
+      gclid: utmParameters.gclid || null,
 
       // Booking status fields (for proactive follow-up)
       booking_status: (() => {
