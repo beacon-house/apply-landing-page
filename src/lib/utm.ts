@@ -35,7 +35,9 @@ export const getUtmParametersFromUrl = (): UtmParameters => {
     if (params.has('adset_id')) utm.adset_id = params.get('adset_id') || undefined;
     if (params.has('ad_id')) utm.ad_id = params.get('ad_id') || undefined;
     if (params.has('utm_placement')) utm.utm_placement = params.get('utm_placement') || undefined;
-    
+    // Google Ads click ID — required for offline conversion uploads back to Google
+    if (params.has('gclid')) utm.gclid = params.get('gclid') || undefined;
+
     // Log extracted UTM parameters for debugging
     const hasUtm = Object.keys(utm).length > 0;
     if (hasUtm) {

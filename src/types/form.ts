@@ -27,6 +27,7 @@ export interface UtmParameters {
   adset_id?: string;
   ad_id?: string;
   utm_placement?: string;
+  gclid?: string;
 }
 
 // Base form interfaces
