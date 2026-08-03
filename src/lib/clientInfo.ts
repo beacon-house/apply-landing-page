@@ -1,8 +1,12 @@
 /**
  * Client Information Utility
- * 
- * Purpose: Fetches and caches client IP address asynchronously for Meta CAPI events.
- * Non-blocking implementation that doesn't delay form interactions.
+ *
+ * Purpose: Fetches and caches the client IP address asynchronously for Meta CAPI
+ * events. Non-blocking - it never delays a CTA.
+ *
+ * Served by our own Netlify function rather than a Supabase edge function, which
+ * was the last thing tying this landing page to Supabase now that the form has
+ * moved to the unified form product.
  */
 
 let cachedClientIp: string | undefined = undefined;
@@ -18,21 +22,10 @@ export async function fetchClientIpAddress(): Promise<void> {
   ipFetchAttempted = true;
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !anonKey) {
-      ipFetchInProgress = false;
-      return;
-    }
-
-    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-client-ip`;
-
-    const response = await fetch(edgeFunctionUrl, {
+    const response = await fetch('/.netlify/functions/client-ip', {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`
+        'Content-Type': 'application/json'
       },
       signal: AbortSignal.timeout(5000)
     });
