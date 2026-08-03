@@ -11,17 +11,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useFormStore } from '@/store/formStore';
 import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
 import { fireGA4CTAClickEvent } from '@/lib/ga4Events';
+import { navigateToForm } from '@/lib/formUrl';
 
 interface HeaderProps {
   showCTA?: boolean;
 }
 
 export function Header({ showCTA = true }: HeaderProps) {
-  const navigate = useNavigate();
   const { addTriggeredEvents } = useFormStore();
   const [showMobileStickyCTA, setShowMobileStickyCTA] = useState(false);
   const [showHeaderCTA, setShowHeaderCTA] = useState(false);
@@ -33,7 +32,7 @@ export function Header({ showCTA = true }: HeaderProps) {
     addTriggeredEvents(ctaEvents);
     fireGA4CTAClickEvent('header');
     
-    navigate('/application-form');
+    navigateToForm();
   };
 
   // Scroll detection for CTA visibility logic

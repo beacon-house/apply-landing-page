@@ -6,7 +6,7 @@ import { getUtmParametersFromUrl } from '@/lib/utm';
 import { fetchClientIpAddress } from '@/lib/clientInfo';
 import { useFormStore } from '@/store/formStore';
 import LandingPage from './components/LandingPage';
-import FormPage from './components/FormPage';
+import FormRedirect from './components/FormRedirect';
 import NotFound from './components/NotFound';
 
 declare global {
@@ -45,7 +45,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/application-form" element={<FormPage />} />
+      <Route path="/application-form" element={<FormRedirect />} />
       <Route path="/questionnaire" element={<Navigate to="/application-form" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
