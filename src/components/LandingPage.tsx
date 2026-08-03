@@ -9,7 +9,6 @@
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { Trophy, GraduationCap, Users, DollarSign, Award, BarChart3, BookOpen, Briefcase, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,9 +16,9 @@ import { Header } from './Header';
 import { useFormStore } from '@/store/formStore';
 import { fireCTAClickEvent } from '@/lib/metaPixelEvents';
 import { fireGA4CTAClickEvent } from '@/lib/ga4Events';
+import { navigateToForm } from '@/lib/formUrl';
 
 export default function LandingPage() {
-  const navigate = useNavigate();
   const { addTriggeredEvents } = useFormStore();
 
   const handleScrollToForm = () => {
@@ -28,7 +27,7 @@ export default function LandingPage() {
     addTriggeredEvents(ctaEvents);
     fireGA4CTAClickEvent('hero');
     
-    navigate('/application-form');
+    navigateToForm();
   };
 
   return (
